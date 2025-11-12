@@ -23,6 +23,11 @@ public class AuthController {
 		return authService.login(req.getEmail(), req.getPassword());
 	}
 
+	@PutMapping("/reset")
+	public AuthService.ResetPasswordResult resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+		return authService.resetPassword(req.getEmail(), req.getPassword(), req.getVerificationCode());
+	}
+
 	@Data
 	public static class LoginRequest {
 		@NotBlank
@@ -31,5 +36,18 @@ public class AuthController {
 
 		@NotBlank
 		private String password;
+	}
+
+	@Data
+	public static class ResetPasswordRequest {
+		@NotBlank(message = "邮箱不能为空")
+		@Email(message = "邮箱格式不正确")
+		private String email;
+
+		@NotBlank(message = "新密码不能为空")
+		private String password;
+
+		@NotBlank(message = "验证码不能为空")
+		private String verificationCode;
 	}
 }

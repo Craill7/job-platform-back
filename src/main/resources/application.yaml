@@ -10,7 +10,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/db_name # 自行修改数据库名称
-    username: your_db_name # 自行修改数据库用户名
+    username: your_username # 自行修改数据库用户名
     password: your_password # 自行修改数据库密码
   flyway:
     enabled: true
@@ -53,6 +53,8 @@ logging:
   level:
     root: INFO
     cn.sysu.sse.recruitment.job_platform_api: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.filter: DEBUG
 
 ---
 spring:

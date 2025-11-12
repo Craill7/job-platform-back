@@ -49,8 +49,9 @@ public class SecurityConfig {
 						).permitAll()
 						.requestMatchers(HttpMethod.POST,
 								"/auth/login",
-								"/auth/reset",
 								"/auth/register").permitAll()
+						.requestMatchers(HttpMethod.PUT,
+								"/auth/reset").permitAll()
 						.anyRequest().authenticated()
 				)
 				.authenticationProvider(authenticationProvider())

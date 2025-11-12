@@ -8,6 +8,7 @@ import cn.sysu.sse.recruitment.job_platform_api.security.JwtTokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +41,9 @@ public class AuthService {
             return LoginResult.fail("邮箱或密码错误");
         }
 
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.update(user);
+
         // 生成 JWT，subject=email，附加 id 与 role claim
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", user.getId());
@@ -65,6 +69,41 @@ public class AuthService {
             case PENDING -> "pending";
             case DISABLED -> "disabled";
         };
+    }
+
+    /**
+     * 重置密码
+     * @param email 用户邮箱
+     * @param newPassword 新密码
+     * @param verificationCode 验证码
+     * @return 重置结果
+     */
+    public ResetPasswordResult resetPassword(String email, String newPassword, String verificationCode) {
+        // TODO: TASK013 - 对接验证码校验服务
+        // 暂时占位校验逻辑，验证码服务实现后需要替换
+        if (verificationCode == null || verificationCode.trim().isEmpty()) {
+            return ResetPasswordResult.fail(400, "验证码不能为空");
+        }
+        
+        // 查找用户
+        Optional<User> opt = userRepository.findByEmail(email);
+        if (opt.isEmpty()) {
+            return ResetPasswordResult.fail(404, "邮箱不存在");
+        }
+
+        // TODO: TASK013 - 实际验证码校验逻辑
+        // 当前占位：简单检查验证码长度
+        if (verificationCode.length() != 6) {
+            return ResetPasswordResult.fail(400, "验证码错误");
+        }
+
+        User user = opt.get();
+        // 加密新密码并更新
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.update(user);
+
+        return ResetPasswordResult.success("密码重置成功");
     }
 
     public static class UserInfo {
@@ -146,6 +185,36 @@ public class AuthService {
 
         public UserInfo getUserInfo() {
             return userInfo;
+        }
+    }
+
+    public static class ResetPasswordResult {
+        private Integer code;
+        private String message;
+
+        private ResetPasswordResult() {}
+
+        public static ResetPasswordResult success(String message) {
+            ResetPasswordResult result = new ResetPasswordResult();
+            result.code = 200;
+            result.message = message;
+            return result;
+        }
+
+        public static ResetPasswordResult fail(int code, String message) {
+            ResetPasswordResult result = new ResetPasswordResult();
+            result.code = code;
+            result.message = message;
+            return result;
+        }
+
+        // Getters
+        public Integer getCode() {
+            return code;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 }
