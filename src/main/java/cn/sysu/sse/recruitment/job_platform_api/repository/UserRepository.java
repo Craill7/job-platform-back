@@ -1,6 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.repository;
 
-import cn.sysu.sse.recruitment.job_platform_api.domain.User;
+import cn.sysu.sse.recruitment.job_platform_api.domain.entity.User;
 import cn.sysu.sse.recruitment.job_platform_api.mapper.UserMapper;
 import org.springframework.stereotype.Repository;
 

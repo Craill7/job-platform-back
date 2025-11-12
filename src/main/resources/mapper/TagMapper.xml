@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.sysu.sse.recruitment.job_platform_api.mapper.TagMapper">
-	<resultMap id="TagMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.Tag">
+	<resultMap id="TagMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.entity.Tag">
 		<id column="id" property="id"/>
 		<result column="name" property="name"/>
 		<result column="created_at" property="createdAt"/>
 		<result column="category_id" property="categoryId"/>
 	</resultMap>
 
-	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Tag" useGeneratedKeys="true" keyProperty="id">
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.entity.Tag" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO tags (name, created_at, category_id)
 		VALUES (#{name}, NOW(), #{categoryId})
 	</insert>

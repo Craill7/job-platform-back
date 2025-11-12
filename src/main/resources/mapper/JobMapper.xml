@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.sysu.sse.recruitment.job_platform_api.mapper.JobMapper">
-	<resultMap id="JobMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.Job">
+	<resultMap id="JobMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.entity.Job">
 		<id column="id" property="id"/>
 		<result column="company_id" property="companyId"/>
 		<result column="posted_by_user_id" property="postedByUserId"/>
@@ -24,14 +24,14 @@
 		<result column="work_address" property="workAddress"/>
 	</resultMap>
 
-	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Job" useGeneratedKeys="true" keyProperty="id">
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.entity.Job" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO jobs
 		(company_id, posted_by_user_id, title, description, min_salary, max_salary, location, work_nature, deadline, status, created_at, updated_at, type, department, headcount, required_degree, required_start_date, bonus_points, work_address)
 		VALUES
 		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{minSalary}, #{maxSalary}, #{location}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
 	</insert>
 
-	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Job">
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.entity.Job">
 		UPDATE jobs
 		SET
 			title = #{title},

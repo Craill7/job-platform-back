@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.sysu.sse.recruitment.job_platform_api.mapper.UserMapper">
-	<resultMap id="UserMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.User">
+	<resultMap id="UserMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.entity.User">
 		<id column="id" property="id"/>
 		<result column="email" property="email"/>
 		<result column="password_hash" property="passwordHash"/>
@@ -12,12 +12,12 @@
 		<result column="last_login_at" property="lastLoginAt"/>
 	</resultMap>
 
-	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.User" useGeneratedKeys="true" keyProperty="id">
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.entity.User" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO users (email, password_hash, role, status, created_at, updated_at, last_login_at)
 		VALUES (#{email}, #{passwordHash}, #{role}, #{status}, NOW(), NOW(), #{lastLoginAt})
 	</insert>
 
-	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.User">
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.entity.User">
 		UPDATE users
 		SET
 			email = #{email},

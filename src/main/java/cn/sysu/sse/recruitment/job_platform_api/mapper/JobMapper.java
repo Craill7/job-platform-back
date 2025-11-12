@@ -1,6 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.mapper;
 
-import cn.sysu.sse.recruitment.job_platform_api.domain.Job;
+import cn.sysu.sse.recruitment.job_platform_api.domain.entity.Job;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

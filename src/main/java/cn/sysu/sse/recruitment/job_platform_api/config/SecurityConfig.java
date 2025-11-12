@@ -2,6 +2,7 @@ package cn.sysu.sse.recruitment.job_platform_api.config;
 
 import cn.sysu.sse.recruitment.job_platform_api.security.JwtAuthenticationFilter;
 import cn.sysu.sse.recruitment.job_platform_api.security.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,13 +27,11 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-	private final CustomUserDetailsService userDetailsService;
+	@Autowired
+	private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, CustomUserDetailsService userDetailsService) {
-		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-		this.userDetailsService = userDetailsService;
-	}
+	@Autowired
+	private CustomUserDetailsService userDetailsService;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -89,5 +88,3 @@ public class SecurityConfig {
 		return source;
 	}
 }
-
-

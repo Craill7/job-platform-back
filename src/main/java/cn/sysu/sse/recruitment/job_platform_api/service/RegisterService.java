@@ -1,41 +1,59 @@
 package cn.sysu.sse.recruitment.job_platform_api.service;
 
-import cn.sysu.sse.recruitment.job_platform_api.domain.User;
+import cn.sysu.sse.recruitment.job_platform_api.domain.entity.User;
 import cn.sysu.sse.recruitment.job_platform_api.domain.enums.UserRole;
 import cn.sysu.sse.recruitment.job_platform_api.domain.enums.UserStatus;
+import cn.sysu.sse.recruitment.job_platform_api.domain.response.RegisterResponse;
 import cn.sysu.sse.recruitment.job_platform_api.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * 注册服务
+ */
 @Service
 public class RegisterService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private static final Logger logger = LoggerFactory.getLogger(RegisterService.class);
 
-    public RegisterService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    public SimpleResponse register(String email, String password, String verificationCode, String roleStr) {
+    /**
+     * 用户注册
+     * @param email 用户邮箱
+     * @param password 用户密码
+     * @param verificationCode 验证码
+     * @param roleStr 角色字符串
+     * @return 注册结果
+     */
+    public RegisterResponse register(String email, String password, String verificationCode, String roleStr) {
+        logger.info("开始处理注册请求，邮箱：{}，角色：{}", email, roleStr);
         // 验证码校验（占位实现：验证码为123456）
         if (!"123456".equals(verificationCode)) {
-            return SimpleResponse.of(400, "验证码错误");
+            logger.warn("注册失败，验证码错误：{}", email);
+            return RegisterResponse.of(400, "验证码错误");
         }
 
         roleStr = roleStr == null ? "" : roleStr.trim().toLowerCase();
         if (!"student".equals(roleStr) && !"hr".equals(roleStr)) {
-            return SimpleResponse.of(400, "参数错误：role 仅支持 student/hr");
+            logger.warn("注册失败，角色参数错误：{}，角色：{}", email, roleStr);
+            return RegisterResponse.of(400, "参数错误：role 仅支持 student/hr");
         }
         UserRole role = "hr".equals(roleStr) ? UserRole.HR : UserRole.STUDENT;
 
         // 对于企业用户(hr)，需要验证邮箱格式
         if (role == UserRole.HR) {
             if (!isValidEmail(email)) {
-                return SimpleResponse.of(400, "邮箱格式不正确");
+                logger.warn("注册失败，邮箱格式不正确：{}", email);
+                return RegisterResponse.of(400, "邮箱格式不正确");
             }
         }
         // 学生邮箱自动拼接后缀（若未包含 @）
@@ -47,7 +65,8 @@ public class RegisterService {
         // 邮箱唯一性
         Optional<User> existing = userRepository.findByEmail(processedEmail);
         if (existing.isPresent()) {
-            return SimpleResponse.of(400, "邮箱已被注册");
+            logger.warn("注册失败，邮箱已被注册：{}", processedEmail);
+            return RegisterResponse.of(400, "邮箱已被注册");
         }
 
         User user = new User();
@@ -58,9 +77,11 @@ public class RegisterService {
         userRepository.insert(user);
 
         if (role == UserRole.STUDENT) {
-            return SimpleResponse.of(201, "学生账户注册成功");
+            logger.info("学生账户注册成功，邮箱：{}", processedEmail);
+            return RegisterResponse.of(201, "学生账户注册成功");
         } else {
-            return SimpleResponse.of(202, "企业账户注册成功，请等待管理员审核");
+            logger.info("企业账户注册成功，等待审核，邮箱：{}", processedEmail);
+            return RegisterResponse.of(202, "企业账户注册成功，请等待管理员审核");
         }
     }
 
@@ -73,32 +94,4 @@ public class RegisterService {
         return email != null && email.contains("@") && email.contains(".");
     }
 
-    public static class SimpleResponse {
-        private Integer code;
-        private String message;
-
-        public static SimpleResponse of(Integer code, String message) {
-            SimpleResponse r = new SimpleResponse();
-            r.code = code;
-            r.message = message;
-            return r;
-        }
-
-        // Getters and setters
-        public Integer getCode() {
-            return code;
-        }
-
-        public void setCode(Integer code) {
-            this.code = code;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
 }

@@ -9,9 +9,9 @@ spring:
     property-naming-strategy: SNAKE_CASE
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/db_name # 自行修改数据库名称
-    username: your_username # 自行修改数据库用户名
-    password: your_password # 自行修改数据库密码
+    url: jdbc:mysql://localhost:3306/job # 自行修改数据库名称
+    username: root # 自行修改数据库用户名
+    password: Craill_1155 # 自行修改数据库密码
   flyway:
     enabled: true
     locations: classpath:db/migration

@@ -1,4 +1,4 @@
-package cn.sysu.sse.recruitment.job_platform_api.domain;
+package cn.sysu.sse.recruitment.job_platform_api.domain.entity;
 
 import lombok.Data;
 

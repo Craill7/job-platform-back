@@ -1,53 +1,49 @@
 package cn.sysu.sse.recruitment.job_platform_api.controller;
 
 import cn.sysu.sse.recruitment.job_platform_api.service.AuthService;
-import lombok.Data;
+import cn.sysu.sse.recruitment.job_platform_api.domain.request.LoginRequest;
+import cn.sysu.sse.recruitment.job_platform_api.domain.request.ResetPasswordRequest;
+import cn.sysu.sse.recruitment.job_platform_api.domain.response.LoginResponse;
+import cn.sysu.sse.recruitment.job_platform_api.domain.response.ResetPasswordResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-	private final AuthService authService;
+	private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-	public AuthController(AuthService authService) {
-		this.authService = authService;
-	}
+	@Autowired
+	private AuthService authService;
 
+	/**
+	 * 用户登录
+	 * @param req 登录请求参数，包含邮箱和密码
+	 * @return 登录结果，包含JWT token和用户信息
+	 */
 	@PostMapping("/login")
-	public AuthService.LoginResult login(@Valid @RequestBody LoginRequest req) {
-		return authService.login(req.getEmail(), req.getPassword());
+	public LoginResponse login(@Valid @RequestBody LoginRequest req) {
+		logger.info("收到登录请求，邮箱：{}", req.getEmail());
+		LoginResponse result = authService.login(req.getEmail(), req.getPassword());
+		logger.info("登录请求处理完成，结果代码：{}", result.getCode());
+		return result;
 	}
 
+	/**
+	 * 找回密码
+	 * @param req 重置密码请求参数，包含邮箱、新密码和验证码
+	 * @return 找回结果
+	 */
 	@PutMapping("/reset")
-	public AuthService.ResetPasswordResult resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
-		return authService.resetPassword(req.getEmail(), req.getPassword(), req.getVerificationCode());
-	}
-
-	@Data
-	public static class LoginRequest {
-		@NotBlank
-		@Email
-		private String email;
-
-		@NotBlank
-		private String password;
-	}
-
-	@Data
-	public static class ResetPasswordRequest {
-		@NotBlank(message = "邮箱不能为空")
-		@Email(message = "邮箱格式不正确")
-		private String email;
-
-		@NotBlank(message = "新密码不能为空")
-		private String password;
-
-		@NotBlank(message = "验证码不能为空")
-		private String verificationCode;
+	public ResetPasswordResponse resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+		logger.info("收到密码找回请求，邮箱：{}", req.getEmail());
+		ResetPasswordResponse result = authService.resetPassword(req.getEmail(), req.getPassword(), req.getVerificationCode());
+		logger.info("密码找回请求处理完成，结果代码：{}", result.getCode());
+		return result;
 	}
 }
