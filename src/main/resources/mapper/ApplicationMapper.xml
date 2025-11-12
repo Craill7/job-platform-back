@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.mapper.ApplicationMapper">
+	<resultMap id="ApplicationMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.Application">
+		<id column="id" property="id"/>
+		<result column="job_id" property="jobId"/>
+		<result column="student_user_id" property="studentUserId"/>
+		<result column="resume_id" property="resumeId"/>
+		<result column="status" property="status" javaType="cn.sysu.sse.recruitment.job_platform_api.domain.enums.ApplicationStatus"/>
+		<result column="submitted_at" property="submittedAt"/>
+		<result column="updated_at" property="updatedAt"/>
+	</resultMap>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Application" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO applications (job_id, student_user_id, resume_id, status, submitted_at, updated_at)
+		VALUES (#{jobId}, #{studentUserId}, #{resumeId}, #{status}, NOW(), NOW())
+	</insert>
+
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Application">
+		UPDATE applications
+		SET status = #{status}, updated_at = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<select id="findById" resultMap="ApplicationMap">
+		SELECT * FROM applications WHERE id = #{id}
+	</select>
+
+	<select id="listByJob" resultMap="ApplicationMap">
+		SELECT * FROM applications
+		WHERE job_id = #{jobId}
+		ORDER BY updated_at DESC, id DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="countByJob" resultType="long">
+		SELECT COUNT(1) FROM applications WHERE job_id = #{jobId}
+	</select>
+</mapper>
+
+

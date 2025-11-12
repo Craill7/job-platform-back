@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.mapper.JobMapper">
+	<resultMap id="JobMap" type="cn.sysu.sse.recruitment.job_platform_api.domain.Job">
+		<id column="id" property="id"/>
+		<result column="company_id" property="companyId"/>
+		<result column="posted_by_user_id" property="postedByUserId"/>
+		<result column="title" property="title"/>
+		<result column="description" property="description"/>
+		<result column="min_salary" property="minSalary"/>
+		<result column="max_salary" property="maxSalary"/>
+		<result column="location" property="location"/>
+		<result column="work_nature" property="workNature" javaType="cn.sysu.sse.recruitment.job_platform_api.domain.enums.WorkNature"/>
+		<result column="deadline" property="deadline"/>
+		<result column="status" property="status" javaType="cn.sysu.sse.recruitment.job_platform_api.domain.enums.JobStatus"/>
+		<result column="created_at" property="createdAt"/>
+		<result column="updated_at" property="updatedAt"/>
+		<result column="type" property="type"/>
+		<result column="department" property="department"/>
+		<result column="headcount" property="headcount"/>
+		<result column="required_degree" property="requiredDegree"/>
+		<result column="required_start_date" property="requiredStartDate"/>
+		<result column="bonus_points" property="bonusPoints"/>
+		<result column="work_address" property="workAddress"/>
+	</resultMap>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Job" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO jobs
+		(company_id, posted_by_user_id, title, description, min_salary, max_salary, location, work_nature, deadline, status, created_at, updated_at, type, department, headcount, required_degree, required_start_date, bonus_points, work_address)
+		VALUES
+		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{minSalary}, #{maxSalary}, #{location}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
+	</insert>
+
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.domain.Job">
+		UPDATE jobs
+		SET
+			title = #{title},
+			description = #{description},
+			min_salary = #{minSalary},
+			max_salary = #{maxSalary},
+			location = #{location},
+			work_nature = #{workNature},
+			deadline = #{deadline},
+			status = #{status},
+			updated_at = NOW(),
+			type = #{type},
+			department = #{department},
+			headcount = #{headcount},
+			required_degree = #{requiredDegree},
+			required_start_date = #{requiredStartDate},
+			bonus_points = #{bonusPoints},
+			work_address = #{workAddress}
+		WHERE id = #{id}
+	</update>
+
+	<delete id="deleteById">
+		DELETE FROM jobs WHERE id = #{id}
+	</delete>
+
+	<select id="findById" resultMap="JobMap">
+		SELECT * FROM jobs WHERE id = #{id}
+	</select>
+
+	<select id="listByCompany" resultMap="JobMap">
+		SELECT * FROM jobs
+		WHERE company_id = #{companyId}
+		ORDER BY updated_at DESC, id DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="countByCompany" resultType="long">
+		SELECT COUNT(1) FROM jobs WHERE company_id = #{companyId}
+	</select>
+</mapper>
+
+
