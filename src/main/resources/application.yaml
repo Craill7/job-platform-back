@@ -9,19 +9,20 @@ spring:
     property-naming-strategy: SNAKE_CASE
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/job # 自行修改数据库名称
-    username: root # 自行修改数据库用户名
-    password: Craill_1155 # 自行修改数据库密码
+    url: jdbc:mysql://localhost:3306/db_name # 自行修改数据库名称
+    username: your_username # 自行修改数据库用户名
+    password: your_password # 自行修改数据库密码
   flyway:
     enabled: true
     locations: classpath:db/migration
     out-of-order: false
     clean-disabled: true
-    baseline-on-migrate: false # 首次迁移时需要设置为true
+    baseline-on-migrate: false # 首次迁移需要设置为true，之后保持false即可
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
-  type-handlers-package: cn.sysu.sse.recruitment.job_platform_api.infrastructure.mybatis.handler
+  type-aliases-package: cn.sysu.sse.recruitment.job_platform_api.pojo.entity
+  type-handlers-package: cn.sysu.sse.recruitment.job_platform_api.server.handler
   mapper-locations: classpath:mapper/*.xml
   mvc:
     pathmatch:
