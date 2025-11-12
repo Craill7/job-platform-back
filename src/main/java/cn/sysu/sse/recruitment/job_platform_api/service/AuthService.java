@@ -48,6 +48,10 @@ public class AuthService {
         }
 
         User user = opt.get();
+        if (user.getStatus() == UserStatus.PENDING) {
+            logger.warn("登录失败，账号审核中：{}", email);
+            return LoginResponse.fail("账号审核中");
+        }
         if (user.getStatus() == UserStatus.DISABLED) {
             logger.warn("登录失败，账号已被禁用：{}", email);
             return LoginResponse.fail("账号已被禁用");

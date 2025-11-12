@@ -5,6 +5,7 @@ import cn.sysu.sse.recruitment.job_platform_api.domain.request.LoginRequest;
 import cn.sysu.sse.recruitment.job_platform_api.domain.request.ResetPasswordRequest;
 import cn.sysu.sse.recruitment.job_platform_api.domain.response.LoginResponse;
 import cn.sysu.sse.recruitment.job_platform_api.domain.response.ResetPasswordResponse;
+import cn.sysu.sse.recruitment.job_platform_api.common.api.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,11 +28,17 @@ public class AuthController {
 	 * @return 登录结果，包含JWT token和用户信息
 	 */
 	@PostMapping("/login")
-	public LoginResponse login(@Valid @RequestBody LoginRequest req) {
+	public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
 		logger.info("收到登录请求，邮箱：{}", req.getEmail());
 		LoginResponse result = authService.login(req.getEmail(), req.getPassword());
 		logger.info("登录请求处理完成，结果代码：{}", result.getCode());
-		return result;
+		
+		// 根据业务结果码决定是成功还是失败
+		if (result.getCode() == 200) {
+			return ApiResponse.success(result);
+		} else {
+			return ApiResponse.error(result.getCode(), result.getMessage());
+		}
 	}
 
 	/**
@@ -40,10 +47,16 @@ public class AuthController {
 	 * @return 找回结果
 	 */
 	@PutMapping("/reset")
-	public ResetPasswordResponse resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+	public ApiResponse<ResetPasswordResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
 		logger.info("收到密码找回请求，邮箱：{}", req.getEmail());
 		ResetPasswordResponse result = authService.resetPassword(req.getEmail(), req.getPassword(), req.getVerificationCode());
 		logger.info("密码找回请求处理完成，结果代码：{}", result.getCode());
-		return result;
+		
+		// 根据业务结果码决定是成功还是失败
+		if (result.getCode() == 200) {
+			return ApiResponse.success(result);
+		} else {
+			return ApiResponse.error(result.getCode(), result.getMessage());
+		}
 	}
 }
