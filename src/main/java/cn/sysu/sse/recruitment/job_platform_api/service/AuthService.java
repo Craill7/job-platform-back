@@ -5,6 +5,7 @@ import cn.sysu.sse.recruitment.job_platform_api.domain.enums.UserRole;
 import cn.sysu.sse.recruitment.job_platform_api.domain.enums.UserStatus;
 import cn.sysu.sse.recruitment.job_platform_api.domain.response.LoginResponse;
 import cn.sysu.sse.recruitment.job_platform_api.domain.response.ResetPasswordResponse;
+import cn.sysu.sse.recruitment.job_platform_api.domain.response.ChangePasswordResponse;
 import cn.sysu.sse.recruitment.job_platform_api.repository.UserRepository;
 import cn.sysu.sse.recruitment.job_platform_api.security.JwtTokenService;
 import org.slf4j.Logger;
@@ -141,6 +142,40 @@ public class AuthService {
 
         logger.info("密码重置成功，邮箱：{}", email);
         return ResetPasswordResponse.success("密码重置成功");
+    }
+
+    /**
+     * 修改密码（通过用户ID）
+     * @param userId 当前登录用户ID
+     * @param oldPassword 原密码
+     * @param newPassword 新密码
+     * @return 修改结果
+     */
+    public ChangePasswordResponse changePasswordByUserId(Integer userId, String oldPassword, String newPassword) {
+        logger.info("开始处理密码修改请求，用户ID：{}", userId);
+        
+        // 查找用户
+        Optional<User> opt = userRepository.findById(userId);
+        if (opt.isEmpty()) {
+            logger.warn("密码修改失败，用户不存在：{}", userId);
+            return ChangePasswordResponse.fail(400, "用户不存在");
+        }
+
+        User user = opt.get();
+        
+        // 验证原密码
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            logger.warn("密码修改失败，原密码错误，用户ID：{}", userId);
+            return ChangePasswordResponse.fail(400, "原密码错误");
+        }
+
+        // 加密新密码并更新
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.update(user);
+
+        logger.info("密码修改成功，用户ID：{}，邮箱：{}", userId, user.getEmail());
+        return ChangePasswordResponse.success("密码修改成功");
     }
 
 }
