@@ -16,4 +16,10 @@ public interface ApplicationMapper {
 	                            @Param("offset") int offset,
 	                            @Param("limit") int limit);
 	long countByJob(@Param("jobId") Integer jobId);
+	
+	// 求职中心相关方法
+	Optional<Application> findByJobAndStudent(@Param("jobId") Integer jobId, @Param("studentUserId") Integer studentUserId);
+	
+	// 检查简历是否被投递记录引用
+	int countByResumeId(@Param("resumeId") Long resumeId);
 }

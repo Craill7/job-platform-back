@@ -16,6 +16,21 @@
 	<select id="listByCategory" resultMap="TagMap">
 		SELECT * FROM tags WHERE category_id = #{categoryId} ORDER BY id ASC
 	</select>
+
+	<select id="findByNameIn" resultMap="TagMap">
+		SELECT * FROM tags
+		WHERE name IN
+		<foreach collection="names" item="name" open="(" separator="," close=")">
+			#{name}
+		</foreach>
+	</select>
+
+	<select id="findTagsByJobId" resultMap="TagMap">
+		SELECT t.*
+		FROM tags t
+		INNER JOIN job_tags jt ON t.id = jt.tag_id
+		WHERE jt.job_id = #{jobId}
+	</select>
 </mapper>
 
 

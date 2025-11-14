@@ -36,6 +36,16 @@
 	<select id="countByJob" resultType="long">
 		SELECT COUNT(1) FROM applications WHERE job_id = #{jobId}
 	</select>
+
+	<select id="findByJobAndStudent" resultMap="ApplicationMap">
+		SELECT * FROM applications
+		WHERE job_id = #{jobId} AND student_user_id = #{studentUserId}
+		LIMIT 1
+	</select>
+
+	<select id="countByResumeId" resultType="int">
+		SELECT COUNT(1) FROM applications WHERE resume_id = #{resumeId}
+	</select>
 </mapper>
 
 

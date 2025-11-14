@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobFavoriteMapper">
+	<resultMap id="JobFavoriteMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.JobFavorite">
+		<id column="id" property="id"/>
+		<result column="student_user_id" property="studentUserId"/>
+		<result column="job_id" property="jobId"/>
+		<result column="saved_at" property="savedAt"/>
+	</resultMap>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.JobFavorite" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO job_favorites (student_user_id, job_id, saved_at)
+		VALUES (#{studentUserId}, #{jobId}, NOW())
+	</insert>
+
+	<delete id="deleteByStudentAndJob">
+		DELETE FROM job_favorites
+		WHERE student_user_id = #{studentUserId} AND job_id = #{jobId}
+	</delete>
+
+	<select id="findByStudentAndJob" resultMap="JobFavoriteMap">
+		SELECT * FROM job_favorites
+		WHERE student_user_id = #{studentUserId} AND job_id = #{jobId}
+		LIMIT 1
+	</select>
+
+	<select id="findJobIdsByStudent" resultType="integer">
+		SELECT job_id FROM job_favorites
+		WHERE student_user_id = #{studentUserId}
+		ORDER BY saved_at DESC
+	</select>
+
+	<select id="countByStudent" resultType="long">
+		SELECT COUNT(1) FROM job_favorites
+		WHERE student_user_id = #{studentUserId}
+	</select>
+</mapper>
+

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.OrganizationExperienceMapper">
+	<resultMap id="OrganizationExperienceMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.OrganizationExperience">
+		<id column="id" property="id"/>
+		<result column="student_user_id" property="studentUserId"/>
+		<result column="organization_name" property="organizationName"/>
+		<result column="role" property="role"/>
+		<result column="start_date" property="startDate"/>
+		<result column="end_date" property="endDate"/>
+		<result column="description" property="description"/>
+	</resultMap>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.OrganizationExperience" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO organization_experiences (student_user_id, organization_name, role, start_date, end_date, description)
+		VALUES (#{studentUserId}, #{organizationName}, #{role}, #{startDate}, #{endDate}, #{description})
+	</insert>
+
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.OrganizationExperience">
+		UPDATE organization_experiences
+		SET
+			organization_name = #{organizationName},
+			role = #{role},
+			start_date = #{startDate},
+			end_date = #{endDate},
+			description = #{description}
+		WHERE id = #{id} AND student_user_id = #{studentUserId}
+	</update>
+
+	<delete id="deleteById">
+		DELETE FROM organization_experiences WHERE id = #{id}
+	</delete>
+
+	<select id="findById" resultMap="OrganizationExperienceMap">
+		SELECT * FROM organization_experiences WHERE id = #{id}
+	</select>
+
+	<select id="findByStudentUserId" resultMap="OrganizationExperienceMap">
+		SELECT * FROM organization_experiences
+		WHERE student_user_id = #{studentUserId}
+		ORDER BY start_date DESC, id DESC
+	</select>
+</mapper>
+

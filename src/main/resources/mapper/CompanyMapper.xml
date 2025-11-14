@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper">
+	<resultMap id="CompanyMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company">
+		<id column="company_id" property="companyId"/>
+		<result column="user_id" property="userId"/>
+		<result column="company_name" property="companyName"/>
+		<result column="description" property="description"/>
+		<result column="logo_url" property="logoUrl"/>
+		<result column="industry_id" property="industryId"/>
+		<result column="nature_id" property="natureId"/>
+		<result column="company_scale_id" property="companyScaleId"/>
+		<result column="company_address" property="companyAddress"/>
+		<result column="contact_person_name" property="contactPersonName"/>
+		<result column="contact_person_phone" property="contactPersonPhone"/>
+		<result column="created_at" property="createdAt"/>
+	</resultMap>
+
+	<select id="findById" resultMap="CompanyMap">
+		SELECT * FROM companies WHERE company_id = #{companyId}
+	</select>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company" useGeneratedKeys="true" keyProperty="companyId">
+		INSERT INTO companies (user_id, company_name, description, logo_url, industry_id, nature_id, 
+			company_scale_id, company_address, contact_person_name, contact_person_phone, created_at)
+		VALUES (#{userId}, #{companyName}, #{description}, #{logoUrl}, #{industryId}, #{natureId},
+			#{companyScaleId}, #{companyAddress}, #{contactPersonName}, #{contactPersonPhone}, NOW())
+	</insert>
+</mapper>
+

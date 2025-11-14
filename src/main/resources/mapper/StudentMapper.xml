@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.StudentMapper">
+	<resultMap id="StudentMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Student">
+		<id column="user_id" property="userId"/>
+		<result column="student_id" property="studentId"/>
+		<result column="avatar_url" property="avatarUrl"/>
+		<result column="full_name" property="fullName"/>
+		<result column="phone_number" property="phoneNumber"/>
+		<result column="gender" property="gender"/>
+		<result column="date_of_birth" property="dateOfBirth"/>
+		<result column="job_seeking_status" property="jobSeekingStatus"/>
+		<result column="expected_position" property="expectedPosition"/>
+		<result column="expected_min_salary" property="expectedMinSalary"/>
+		<result column="expected_max_salary" property="expectedMaxSalary"/>
+		<result column="skills_summary" property="skillsSummary"/>
+		<result column="current_template_id" property="currentTemplateId"/>
+	</resultMap>
+
+	<select id="findByUserId" resultMap="StudentMap">
+		SELECT * FROM students WHERE user_id = #{userId}
+	</select>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Student">
+		INSERT INTO students (user_id, student_id, avatar_url, full_name, phone_number, gender, date_of_birth, 
+			job_seeking_status, expected_position, expected_min_salary, expected_max_salary, skills_summary, current_template_id)
+		VALUES (#{userId}, #{studentId}, #{avatarUrl}, #{fullName}, #{phoneNumber}, #{gender}, #{dateOfBirth},
+			#{jobSeekingStatus}, #{expectedPosition}, #{expectedMinSalary}, #{expectedMaxSalary}, #{skillsSummary}, #{currentTemplateId})
+	</insert>
+
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Student">
+		UPDATE students
+		SET
+			avatar_url = #{avatarUrl},
+			full_name = #{fullName},
+			phone_number = #{phoneNumber},
+			gender = #{gender},
+			date_of_birth = #{dateOfBirth},
+			job_seeking_status = #{jobSeekingStatus},
+			expected_position = #{expectedPosition},
+			expected_min_salary = #{expectedMinSalary},
+			expected_max_salary = #{expectedMaxSalary},
+			skills_summary = #{skillsSummary},
+			current_template_id = #{currentTemplateId}
+		WHERE user_id = #{userId}
+	</update>
+</mapper>
+

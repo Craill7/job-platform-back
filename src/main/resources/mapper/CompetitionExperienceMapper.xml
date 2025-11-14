@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompetitionExperienceMapper">
+	<resultMap id="CompetitionExperienceMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.CompetitionExperience">
+		<id column="id" property="id"/>
+		<result column="student_user_id" property="studentUserId"/>
+		<result column="competition_name" property="competitionName"/>
+		<result column="role" property="role"/>
+		<result column="award" property="award"/>
+		<result column="date" property="date"/>
+	</resultMap>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.CompetitionExperience" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO competition_experiences (student_user_id, competition_name, role, award, date)
+		VALUES (#{studentUserId}, #{competitionName}, #{role}, #{award}, #{date})
+	</insert>
+
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.CompetitionExperience">
+		UPDATE competition_experiences
+		SET
+			competition_name = #{competitionName},
+			role = #{role},
+			award = #{award},
+			date = #{date}
+		WHERE id = #{id} AND student_user_id = #{studentUserId}
+	</update>
+
+	<delete id="deleteById">
+		DELETE FROM competition_experiences WHERE id = #{id}
+	</delete>
+
+	<select id="findById" resultMap="CompetitionExperienceMap">
+		SELECT * FROM competition_experiences WHERE id = #{id}
+	</select>
+
+	<select id="findByStudentUserId" resultMap="CompetitionExperienceMap">
+		SELECT * FROM competition_experiences
+		WHERE student_user_id = #{studentUserId}
+		ORDER BY date DESC, id DESC
+	</select>
+</mapper>
+

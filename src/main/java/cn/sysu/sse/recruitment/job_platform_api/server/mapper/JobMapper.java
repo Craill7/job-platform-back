@@ -17,4 +17,25 @@ public interface JobMapper {
 	                        @Param("offset") int offset,
 	                        @Param("limit") int limit);
 	long countByCompany(@Param("companyId") Integer companyId);
+	
+	// 求职中心相关方法
+	List<Job> searchJobs(@Param("keyword") String keyword,
+	                     @Param("location") String location,
+	                     @Param("type") String type,
+	                     @Param("tagIds") List<Integer> tagIds,
+	                     @Param("workNature") String workNature,
+	                     @Param("offset") int offset,
+	                     @Param("limit") int limit);
+	long countSearchJobs(@Param("keyword") String keyword,
+	                     @Param("location") String location,
+	                     @Param("type") String type,
+	                     @Param("tagIds") List<Integer> tagIds,
+	                     @Param("workNature") String workNature);
+	List<Job> findFavoriteJobsByStudent(@Param("studentUserId") Integer studentUserId,
+	                                    @Param("offset") int offset,
+	                                    @Param("limit") int limit);
+	long countFavoriteJobsByStudent(@Param("studentUserId") Integer studentUserId);
+	List<Job> findOtherJobsByCompany(@Param("companyId") Integer companyId,
+	                                 @Param("excludeJobId") Integer excludeJobId,
+	                                 @Param("limit") int limit);
 }

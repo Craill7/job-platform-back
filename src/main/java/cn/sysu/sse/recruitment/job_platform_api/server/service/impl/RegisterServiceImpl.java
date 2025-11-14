@@ -2,15 +2,20 @@ package cn.sysu.sse.recruitment.job_platform_api.server.service.impl;
 
 import cn.sysu.sse.recruitment.job_platform_api.server.service.RegisterService;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.User;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Student;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.UserRole;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.UserStatus;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.RegisterVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.UserMapper;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.StudentMapper;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -25,6 +30,10 @@ public class RegisterServiceImpl implements RegisterService {
     @Autowired
     private UserMapper userMapper;
     @Autowired
+    private StudentMapper studentMapper;
+    @Autowired
+    private CompanyMapper companyMapper;
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     /**
@@ -36,6 +45,7 @@ public class RegisterServiceImpl implements RegisterService {
      * @return 注册结果
      */
     @Override
+    @Transactional
     public RegisterVO register(String email, String password, String verificationCode, String roleStr) {
         logger.info("开始处理注册请求，邮箱：{}，角色：{}", email, roleStr);
         // 验证码校验（占位实现：验证码为123456）
@@ -78,11 +88,21 @@ public class RegisterServiceImpl implements RegisterService {
         user.setStatus(role == UserRole.STUDENT ? UserStatus.ACTIVE : UserStatus.PENDING);
         userMapper.insert(user);
 
+        // 如果是学生用户，自动创建 students 记录
         if (role == UserRole.STUDENT) {
-            logger.info("学生账户注册成功，邮箱：{}", processedEmail);
+            Student student = new Student();
+            student.setUserId(user.getId());
+            // student_id 现在可以为空，用户后续可以填写
+            studentMapper.insert(student);
+            logger.info("学生账户注册成功，邮箱：{}，用户ID：{}", processedEmail, user.getId());
             return RegisterVO.of(201, "学生账户注册成功");
         } else {
-            logger.info("企业账户注册成功，等待审核，邮箱：{}", processedEmail);
+            // 如果是企业用户，自动创建 companies 记录
+            Company company = new Company();
+            company.setUserId(user.getId());
+            // company_name 现在可以为空，企业后续可以填写
+            companyMapper.insert(company);
+            logger.info("企业账户注册成功，等待审核，邮箱：{}，用户ID：{}", processedEmail, user.getId());
             return RegisterVO.of(202, "企业账户注册成功，请等待管理员审核");
         }
     }

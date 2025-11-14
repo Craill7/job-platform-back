@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.ProjectExperienceMapper">
+	<resultMap id="ProjectExperienceMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.ProjectExperience">
+		<id column="id" property="id"/>
+		<result column="student_user_id" property="studentUserId"/>
+		<result column="project_name" property="projectName"/>
+		<result column="role" property="role"/>
+		<result column="project_link" property="projectLink"/>
+		<result column="start_date" property="startDate"/>
+		<result column="end_date" property="endDate"/>
+		<result column="description" property="description"/>
+	</resultMap>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.ProjectExperience" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO project_experiences (student_user_id, project_name, role, project_link, start_date, end_date, description)
+		VALUES (#{studentUserId}, #{projectName}, #{role}, #{projectLink}, #{startDate}, #{endDate}, #{description})
+	</insert>
+
+	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.ProjectExperience">
+		UPDATE project_experiences
+		SET
+			project_name = #{projectName},
+			role = #{role},
+			project_link = #{projectLink},
+			start_date = #{startDate},
+			end_date = #{endDate},
+			description = #{description}
+		WHERE id = #{id} AND student_user_id = #{studentUserId}
+	</update>
+
+	<delete id="deleteById">
+		DELETE FROM project_experiences WHERE id = #{id}
+	</delete>
+
+	<select id="findById" resultMap="ProjectExperienceMap">
+		SELECT * FROM project_experiences WHERE id = #{id}
+	</select>
+
+	<select id="findByStudentUserId" resultMap="ProjectExperienceMap">
+		SELECT * FROM project_experiences
+		WHERE student_user_id = #{studentUserId}
+		ORDER BY start_date DESC, id DESC
+	</select>
+</mapper>
+

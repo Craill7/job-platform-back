@@ -1,10 +1,13 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.handler;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
-import cn.sysu.sse.recruitment.job_platform_api.common.util.BusinessException;
-import cn.sysu.sse.recruitment.job_platform_api.common.util.ErrorCode;
+import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
+import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
@@ -19,8 +22,11 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+	private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 	@ExceptionHandler(BusinessException.class)
 	public ApiResponse<Void> handleBusiness(BusinessException ex) {
+		logger.debug("业务异常：code={}, message={}", ex.getCode(), ex.getMessage());
 		return ApiResponse.error(ex.getCode(), ex.getMessage());
 	}
 
@@ -58,9 +64,24 @@ public class GlobalExceptionHandler {
 		return ApiResponse.error(ErrorCode.FORBIDDEN.getCode(), ErrorCode.FORBIDDEN.getDefaultMessage());
 	}
 
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ApiResponse<Void> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+		logger.error("数据完整性约束违反", ex);
+		String message = "操作失败：数据完整性约束违反";
+		// 检查是否是外键约束错误
+		if (ex.getMessage() != null && ex.getMessage().contains("foreign key")) {
+			message = "无法删除：该记录被其他数据引用，请先删除相关引用记录";
+		} else if (ex.getMessage() != null && ex.getMessage().contains("Cannot delete")) {
+			message = "无法删除：该记录被其他数据引用，请先删除相关引用记录";
+		}
+		return ApiResponse.error(ErrorCode.BAD_REQUEST.getCode(), message);
+	}
+
 	@ExceptionHandler(Exception.class)
 	public ApiResponse<Void> handleOther(Exception ex) {
-		return ApiResponse.error(ErrorCode.INTERNAL_ERROR.getCode(), ErrorCode.INTERNAL_ERROR.getDefaultMessage());
+		logger.error("未处理的异常", ex);
+		String message = ex.getMessage() != null ? ex.getMessage() : ErrorCode.INTERNAL_ERROR.getDefaultMessage();
+		return ApiResponse.error(ErrorCode.INTERNAL_ERROR.getCode(), message);
 	}
 
 	private String formatFieldError(FieldError fe) {

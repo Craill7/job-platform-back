@@ -10,4 +10,8 @@ import java.util.List;
 public interface TagMapper {
 	int insert(Tag tag);
 	List<Tag> listByCategory(@Param("categoryId") Integer categoryId);
+	
+	// 求职中心相关方法
+	List<Tag> findByNameIn(@Param("names") List<String> names);
+	List<Tag> findTagsByJobId(@Param("jobId") Integer jobId);
 }

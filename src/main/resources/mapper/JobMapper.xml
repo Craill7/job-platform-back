@@ -71,6 +71,88 @@
 	<select id="countByCompany" resultType="long">
 		SELECT COUNT(1) FROM jobs WHERE company_id = #{companyId}
 	</select>
+
+	<!-- 求职中心相关查询 -->
+	<select id="searchJobs" resultMap="JobMap">
+		SELECT DISTINCT j.*
+		FROM jobs j
+		LEFT JOIN companies c ON j.company_id = c.company_id
+		LEFT JOIN job_tags jt ON j.id = jt.job_id
+		WHERE j.status = 20
+		<if test="keyword != null and keyword != ''">
+			AND (j.title LIKE CONCAT('%', #{keyword}, '%') OR c.company_name LIKE CONCAT('%', #{keyword}, '%'))
+		</if>
+		<if test="location != null and location != ''">
+			AND j.location LIKE CONCAT('%', #{location}, '%')
+		</if>
+		<if test="type != null and type != ''">
+			AND j.type = #{type}
+		</if>
+		<if test="tagIds != null and tagIds.size() > 0">
+			AND jt.tag_id IN
+			<foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+				#{tagId}
+			</foreach>
+		</if>
+		<if test="workNature != null and workNature != ''">
+			AND j.work_nature = #{workNature}
+		</if>
+		ORDER BY j.updated_at DESC, j.id DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="countSearchJobs" resultType="long">
+		SELECT COUNT(DISTINCT j.id)
+		FROM jobs j
+		LEFT JOIN companies c ON j.company_id = c.company_id
+		LEFT JOIN job_tags jt ON j.id = jt.job_id
+		WHERE j.status = 20
+		<if test="keyword != null and keyword != ''">
+			AND (j.title LIKE CONCAT('%', #{keyword}, '%') OR c.company_name LIKE CONCAT('%', #{keyword}, '%'))
+		</if>
+		<if test="location != null and location != ''">
+			AND j.location LIKE CONCAT('%', #{location}, '%')
+		</if>
+		<if test="type != null and type != ''">
+			AND j.type = #{type}
+		</if>
+		<if test="tagIds != null and tagIds.size() > 0">
+			AND jt.tag_id IN
+			<foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+				#{tagId}
+			</foreach>
+		</if>
+		<if test="workNature != null and workNature != ''">
+			AND j.work_nature = #{workNature}
+		</if>
+	</select>
+
+	<select id="findFavoriteJobsByStudent" resultMap="JobMap">
+		SELECT j.*
+		FROM jobs j
+		INNER JOIN job_favorites jf ON j.id = jf.job_id
+		WHERE jf.student_user_id = #{studentUserId}
+		AND j.status = 20
+		ORDER BY jf.saved_at DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="countFavoriteJobsByStudent" resultType="long">
+		SELECT COUNT(1)
+		FROM jobs j
+		INNER JOIN job_favorites jf ON j.id = jf.job_id
+		WHERE jf.student_user_id = #{studentUserId}
+		AND j.status = 20
+	</select>
+
+	<select id="findOtherJobsByCompany" resultMap="JobMap">
+		SELECT * FROM jobs
+		WHERE company_id = #{companyId}
+		AND id != #{excludeJobId}
+		AND status = 20
+		ORDER BY updated_at DESC
+		LIMIT #{limit}
+	</select>
 </mapper>
 
 

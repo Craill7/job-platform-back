@@ -16,7 +16,7 @@ CREATE TABLE users (
 -- 1.2 students (学生信息表)
 CREATE TABLE students (
     user_id INT PRIMARY KEY COMMENT '关联 users.id',
-    student_id VARCHAR(50) NOT NULL UNIQUE COMMENT '学号 (唯一)',
+    student_id VARCHAR(50) NULL UNIQUE COMMENT '学号 (唯一，可为空)',
     avatar_url VARCHAR(1024) NULL COMMENT '头像(主档案)',
     full_name VARCHAR(100) NULL COMMENT '(主档案) 姓名',
     phone_number VARCHAR(20) NULL COMMENT '(主档案) 手机号',
