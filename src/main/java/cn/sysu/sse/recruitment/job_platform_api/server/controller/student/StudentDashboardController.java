@@ -1,4 +1,4 @@
-package cn.sysu.sse.recruitment.job_platform_api.server.controller;
+package cn.sysu.sse.recruitment.job_platform_api.server.controller.student;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;

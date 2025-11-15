@@ -258,3 +258,4 @@ CREATE INDEX idx_applications_student_user_id ON applications(student_user_id);
 CREATE INDEX idx_applications_status ON applications(status);
 -- job_favorites 已有复合唯一键 uk_student_job, 可兼作索引
 
+

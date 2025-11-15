@@ -1,4 +1,4 @@
-package cn.sysu.sse.recruitment.job_platform_api.server.util;
+package cn.sysu.sse.recruitment.job_platform_api.common.util;
 
 import org.springframework.web.multipart.MultipartFile;
 

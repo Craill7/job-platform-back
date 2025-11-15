@@ -1,4 +1,4 @@
-package cn.sysu.sse.recruitment.job_platform_api.server.controller;
+package cn.sysu.sse.recruitment.job_platform_api.server.controller.student;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
@@ -9,7 +9,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.UploadResumeFileDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.PositionCenterService;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.ResumeCenterService;
-import cn.sysu.sse.recruitment.job_platform_api.server.util.Base64MultipartFile;
+import cn.sysu.sse.recruitment.job_platform_api.common.util.Base64MultipartFile;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
