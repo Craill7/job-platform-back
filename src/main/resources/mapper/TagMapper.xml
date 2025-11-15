@@ -13,6 +13,10 @@
 		VALUES (#{name}, NOW(), #{categoryId})
 	</insert>
 
+	<select id="listAll" resultMap="TagMap">
+		SELECT * FROM tags ORDER BY id ASC
+	</select>
+
 	<select id="listByCategory" resultMap="TagMap">
 		SELECT * FROM tags WHERE category_id = #{categoryId} ORDER BY id ASC
 	</select>

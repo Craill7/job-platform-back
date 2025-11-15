@@ -9,6 +9,7 @@ import java.util.List;
 @Mapper
 public interface TagMapper {
 	int insert(Tag tag);
+	List<Tag> listAll();
 	List<Tag> listByCategory(@Param("categoryId") Integer categoryId);
 	
 	// 求职中心相关方法
