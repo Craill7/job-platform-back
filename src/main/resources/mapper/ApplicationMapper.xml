@@ -37,6 +37,20 @@
 		SELECT COUNT(1) FROM applications WHERE job_id = #{jobId}
 	</select>
 
+	<select id="countByCompany" resultType="long">
+		SELECT COUNT(1)
+		FROM applications a
+		INNER JOIN jobs j ON a.job_id = j.id
+		WHERE j.company_id = #{companyId}
+	</select>
+
+	<select id="countProcessedByCompany" resultType="long">
+		SELECT COUNT(1)
+		FROM applications a
+		INNER JOIN jobs j ON a.job_id = j.id
+		WHERE j.company_id = #{companyId} AND a.status != 10
+	</select>
+
 	<select id="findByJobAndStudent" resultMap="ApplicationMap">
 		SELECT * FROM applications
 		WHERE job_id = #{jobId} AND student_user_id = #{studentUserId}

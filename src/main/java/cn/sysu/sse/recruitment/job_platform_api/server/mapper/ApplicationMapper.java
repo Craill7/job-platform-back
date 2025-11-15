@@ -16,6 +16,8 @@ public interface ApplicationMapper {
 	                            @Param("offset") int offset,
 	                            @Param("limit") int limit);
 	long countByJob(@Param("jobId") Integer jobId);
+	long countByCompany(@Param("companyId") Integer companyId);
+	long countProcessedByCompany(@Param("companyId") Integer companyId);
 	
 	// 求职中心相关方法
 	Optional<Application> findByJobAndStudent(@Param("jobId") Integer jobId, @Param("studentUserId") Integer studentUserId);

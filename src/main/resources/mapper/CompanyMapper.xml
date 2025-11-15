@@ -20,6 +20,10 @@
 		SELECT * FROM companies WHERE company_id = #{companyId}
 	</select>
 
+	<select id="findByUserId" resultMap="CompanyMap">
+		SELECT * FROM companies WHERE user_id = #{userId}
+	</select>
+
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company" useGeneratedKeys="true" keyProperty="companyId">
 		INSERT INTO companies (user_id, company_name, description, logo_url, industry_id, nature_id, 
 			company_scale_id, company_address, contact_person_name, contact_person_phone, created_at)

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyDictionaryMapper">
+	<select id="findByCompanyId" resultType="cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CompanyDictionaryDTO">
+		SELECT i.name AS industry_name,
+		       n.name AS nature_name,
+		       s.scale AS company_scale
+		FROM companies c
+		LEFT JOIN t_industries i ON c.industry_id = i.id
+		LEFT JOIN t_company_natures n ON c.nature_id = n.id
+		LEFT JOIN t_company_scales s ON c.company_scale_id = s.id
+		WHERE c.company_id = #{companyId}
+		LIMIT 1
+	</select>
+
+	<select id="listIndustries" resultType="string">
+		SELECT name FROM t_industries ORDER BY id ASC
+	</select>
+
+	<select id="listCompanyNatures" resultType="string">
+		SELECT name FROM t_company_natures ORDER BY id ASC
+	</select>
+
+	<select id="listCompanyScales" resultType="string">
+		SELECT scale FROM t_company_scales ORDER BY id ASC
+	</select>
+</mapper>

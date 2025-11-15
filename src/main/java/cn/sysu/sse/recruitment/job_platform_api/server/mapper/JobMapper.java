@@ -13,6 +13,7 @@ public interface JobMapper {
 	int update(Job job);
 	int deleteById(@Param("id") Integer id);
 	Optional<Job> findById(@Param("id") Integer id);
+	long countApprovedJobsByCompany(@Param("companyId") Integer companyId);
 	List<Job> listByCompany(@Param("companyId") Integer companyId,
 	                        @Param("offset") int offset,
 	                        @Param("limit") int limit);

@@ -9,6 +9,7 @@ import java.util.Optional;
 @Mapper
 public interface CompanyMapper {
 	Optional<Company> findById(@Param("companyId") Integer companyId);
+	Optional<Company> findByUserId(@Param("userId") Integer userId);
 	int insert(Company company);
 }
 
