@@ -9,4 +9,6 @@ import java.util.List;
 @Mapper
 public interface CompanyExternalLinkMapper {
 	List<CompanyExternalLink> listByCompanyId(@Param("companyId") Integer companyId);
+	int deleteByCompanyId(@Param("companyId") Integer companyId);
+	int insert(CompanyExternalLink link);
 }

@@ -11,5 +11,7 @@ public interface CompanyMapper {
 	Optional<Company> findById(@Param("companyId") Integer companyId);
 	Optional<Company> findByUserId(@Param("userId") Integer userId);
 	int insert(Company company);
+	int updateProfile(Company company);
+	int updateLogo(@Param("userId") Integer userId, @Param("logoUrl") String logoUrl);
 }
 

@@ -30,5 +30,21 @@
 		VALUES (#{userId}, #{companyName}, #{description}, #{logoUrl}, #{industryId}, #{natureId},
 			#{companyScaleId}, #{companyAddress}, #{contactPersonName}, #{contactPersonPhone}, NOW())
 	</insert>
+
+	<update id="updateProfile" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company">
+		UPDATE companies
+		SET description = #{description},
+		    company_address = #{companyAddress},
+		    nature_id = #{natureId},
+		    industry_id = #{industryId},
+		    company_scale_id = #{companyScaleId},
+		    contact_person_name = #{contactPersonName},
+		    contact_person_phone = #{contactPersonPhone}
+		WHERE user_id = #{userId}
+	</update>
+
+	<update id="updateLogo">
+		UPDATE companies SET logo_url = #{logoUrl} WHERE user_id = #{userId}
+	</update>
 </mapper>
 
