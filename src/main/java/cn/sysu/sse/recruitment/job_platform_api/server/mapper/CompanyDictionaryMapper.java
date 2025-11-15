@@ -13,4 +13,7 @@ public interface CompanyDictionaryMapper {
 	List<String> listIndustries();
 	List<String> listCompanyNatures();
 	List<String> listCompanyScales();
+    Optional<Integer> findIndustryIdByName(@Param("name") String name);
+	Optional<Integer> findNatureIdByName(@Param("name") String name);
+	Optional<Integer> findCompanyScaleIdByValue(@Param("scale") String scale);
 }

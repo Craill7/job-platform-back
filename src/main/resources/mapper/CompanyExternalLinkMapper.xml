@@ -12,4 +12,13 @@
 	<select id="listByCompanyId" resultMap="ExternalLinkMap">
 		SELECT * FROM company_links WHERE company_id = #{companyId} ORDER BY id ASC
 	</select>
+
+	<delete id="deleteByCompanyId">
+		DELETE FROM company_links WHERE company_id = #{companyId}
+	</delete>
+
+	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.CompanyExternalLink">
+		INSERT INTO company_links (company_id, link_name, link_url, created_at)
+		VALUES (#{companyId}, #{linkName}, #{linkUrl}, NOW())
+	</insert>
 </mapper>

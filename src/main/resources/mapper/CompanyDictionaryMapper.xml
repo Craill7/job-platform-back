@@ -24,4 +24,16 @@
 	<select id="listCompanyScales" resultType="string">
 		SELECT scale FROM t_company_scales ORDER BY id ASC
 	</select>
+
+	<select id="findIndustryIdByName" resultType="int">
+		SELECT id FROM t_industries WHERE name = #{name} LIMIT 1
+	</select>
+
+	<select id="findNatureIdByName" resultType="int">
+		SELECT id FROM t_company_natures WHERE name = #{name} LIMIT 1
+	</select>
+
+	<select id="findCompanyScaleIdByValue" resultType="int">
+		SELECT id FROM t_company_scales WHERE scale = #{scale} LIMIT 1
+	</select>
 </mapper>
