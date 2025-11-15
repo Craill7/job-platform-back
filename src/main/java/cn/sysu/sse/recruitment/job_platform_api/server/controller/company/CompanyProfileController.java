@@ -1,7 +1,9 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.controller.company;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.CompanyOptionsVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.CompanyProfileVO;
+import cn.sysu.sse.recruitment.job_platform_api.server.service.CompanyOptionService;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.CompanyProfileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,8 @@ public class CompanyProfileController {
 
 	@Autowired
 	private CompanyProfileService companyProfileService;
+	@Autowired
+	private CompanyOptionService companyOptionService;
 
 	/**
 	 * 企业信息回显
@@ -33,6 +37,16 @@ public class CompanyProfileController {
 		Integer userId = Integer.parseInt(authentication.getName());
 		logger.info("收到企业信息回显请求，用户ID：{}", userId);
 		CompanyProfileVO data = companyProfileService.getCompanyProfile(userId);
+		return ApiResponse.success(data);
+	}
+
+	/**
+	 * 获取企业信息选项
+	 * @return 企业字典选项
+	 */
+	@GetMapping("/options")
+	public ApiResponse<CompanyOptionsVO> getCompanyOptions() {
+		CompanyOptionsVO data = companyOptionService.getCompanyOptions();
 		return ApiResponse.success(data);
 	}
 }
