@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class ApiResponse<T> {
 	private Integer code;
 	private String message;
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+	// data 字段必须始终存在（即使为 null），以符合 OpenAPI 规范
 	private T data;
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private Pagination pagination;

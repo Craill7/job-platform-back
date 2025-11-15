@@ -1,0 +1,17 @@
+package cn.sysu.sse.recruitment.job_platform_api.pojo.vo;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CalendarVO {
+	private String displayMonth;
+	private Integer currentDay;
+	private List<DailyEventVO> dailyEvents;
+}
+

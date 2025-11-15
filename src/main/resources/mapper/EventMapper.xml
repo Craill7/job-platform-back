@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.EventMapper">
+	<resultMap id="EventMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Event">
+		<id column="id" property="id"/>
+		<result column="admin_user_id" property="adminUserId"/>
+		<result column="event_title" property="eventTitle"/>
+		<result column="event_description" property="eventDescription"/>
+		<result column="event_start_time" property="eventStartTime"/>
+		<result column="event_end_time" property="eventEndTime"/>
+		<result column="event_location" property="eventLocation"/>
+		<result column="event_type" property="eventType"/>
+		<result column="target_audience" property="targetAudience"/>
+		<result column="created_at" property="createdAt"/>
+		<result column="updated_at" property="updatedAt"/>
+	</resultMap>
+
+	<select id="findEventsByMonth" resultMap="EventMap">
+		<![CDATA[
+		SELECT * FROM events
+		WHERE event_start_time >= #{startDate} 
+		  AND event_start_time < #{endDate}
+		  AND (target_audience = 0 OR target_audience = 1)
+		ORDER BY event_start_time ASC
+		]]>
+	</select>
+
+	<select id="findUpcomingEvents" resultMap="EventMap">
+		<![CDATA[
+		SELECT * FROM events
+		WHERE event_start_time >= NOW()
+		  AND (target_audience = 0 OR target_audience = 1)
+		ORDER BY event_start_time ASC
+		LIMIT #{limit}
+		]]>
+	</select>
+
+	<select id="findById" resultMap="EventMap">
+		SELECT * FROM events WHERE id = #{id}
+	</select>
+</mapper>
+

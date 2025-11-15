@@ -13,7 +13,7 @@
 
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO applications (job_id, student_user_id, resume_id, status, submitted_at, updated_at)
-		VALUES (#{jobId}, #{studentUserId}, #{resumeId}, #{status}, NOW(), NOW())
+		VALUES (#{jobId}, #{studentUserId}, #{resumeId}, #{status}, #{submittedAt}, #{updatedAt})
 	</insert>
 
 	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application">
@@ -45,6 +45,12 @@
 
 	<select id="countByResumeId" resultType="int">
 		SELECT COUNT(1) FROM applications WHERE resume_id = #{resumeId}
+	</select>
+
+	<select id="findByIdAndStudent" resultMap="ApplicationMap">
+		SELECT * FROM applications
+		WHERE id = #{id} AND student_user_id = #{studentUserId}
+		LIMIT 1
 	</select>
 </mapper>
 

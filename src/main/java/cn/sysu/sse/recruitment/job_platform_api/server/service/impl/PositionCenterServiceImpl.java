@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -412,6 +413,11 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		application.setStudentUserId(studentUserId);
 		application.setResumeId(Long.parseLong(submitDTO.getResumeId()));
 		application.setStatus(ApplicationStatus.SUBMITTED);
+		
+		// 设置投递时间和更新时间
+		LocalDateTime now = LocalDateTime.now();
+		application.setSubmittedAt(now);
+		application.setUpdatedAt(now);
 		
 		applicationMapper.insert(application);
 		

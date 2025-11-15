@@ -34,7 +34,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		final String requestURI = request.getRequestURI();
 		final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-		logger.debug("Processing request to: {} with auth header: {}", requestURI, authHeader != null ? "present" : "absent");
+		logger.info("Processing request to: {} with auth header: {}", requestURI, authHeader != null ? "present" : "absent");
+		if (authHeader != null) {
+			if (authHeader.length() > 20) {
+				logger.info("Auth header preview: {}...", authHeader.substring(0, Math.min(20, authHeader.length())));
+			} else {
+				logger.warn("Auth header is too short: {}", authHeader);
+			}
+		}
 
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 			logger.debug("No valid Bearer token found, continuing filter chain");
@@ -42,13 +49,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		String token = authHeader.substring(7);
+		String token = authHeader.substring(7).trim();
+		
+		// 验证 token 格式（JWT 应该包含两个点）
+		if (token.isEmpty()) {
+			logger.warn("Empty token after 'Bearer ' prefix");
+			filterChain.doFilter(request, response);
+			return;
+		}
+		
+		if (token.split("\\.").length != 3) {
+			logger.warn("Invalid JWT token format. Token should contain exactly 2 period characters. Token length: {}, first 20 chars: {}", 
+					token.length(), token.length() > 20 ? token.substring(0, 20) + "..." : token);
+			filterChain.doFilter(request, response);
+			return;
+		}
+		
 		String email;
 		try {
 			email = tokenService.getClaim(token, claims -> claims.getSubject());
 			logger.debug("Extracted email from token: {}", email);
 		} catch (Exception e) {
-			logger.debug("Invalid token, continuing filter chain", e);
+			logger.warn("Invalid token, continuing filter chain. Error: {}", e.getMessage());
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -56,16 +78,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 			UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 			if (tokenService.isTokenValid(token, email)) {
+				// 检查用户账户是否启用
+				if (!userDetails.isEnabled()) {
+					logger.warn("User account is disabled or not active: {}, status: {}", 
+							email, userDetails instanceof cn.sysu.sse.recruitment.job_platform_api.server.security.CustomUserDetails 
+									? ((cn.sysu.sse.recruitment.job_platform_api.server.security.CustomUserDetails) userDetails).getUser().getStatus() 
+									: "unknown");
+					response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+					response.getWriter().write("{\"code\":403,\"message\":\"账户未激活或已被禁用\"}");
+					response.setContentType("application/json");
+					return;
+				}
 				UsernamePasswordAuthenticationToken authToken =
 						new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext().setAuthentication(authToken);
-				logger.debug("Successfully authenticated user: {}", email);
+				logger.info("Successfully authenticated user: {} for request: {}", email, requestURI);
 			} else {
-				logger.debug("Token is invalid for user: {}", email);
+				logger.warn("Token is invalid for user: {} on request: {}", email, requestURI);
 			}
 		} else {
-			logger.debug("Security context already contains authentication or email is null");
+			if (email == null) {
+				logger.warn("Email is null after token extraction for request: {}", requestURI);
+			} else {
+				logger.debug("Security context already contains authentication for request: {}", requestURI);
+			}
 		}
 
 		filterChain.doFilter(request, response);

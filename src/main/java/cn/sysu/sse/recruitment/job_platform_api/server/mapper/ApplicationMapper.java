@@ -22,4 +22,12 @@ public interface ApplicationMapper {
 	
 	// 检查简历是否被投递记录引用
 	int countByResumeId(@Param("resumeId") Long resumeId);
+	
+	/**
+	 * 根据ID和学生ID查询投递详情（关联Job和Company）
+	 * @param id 投递记录ID
+	 * @param studentUserId 学生用户ID
+	 * @return 投递记录，如果不存在或不属于该学生则返回Optional.empty()
+	 */
+	Optional<Application> findByIdAndStudent(@Param("id") Integer id, @Param("studentUserId") Integer studentUserId);
 }

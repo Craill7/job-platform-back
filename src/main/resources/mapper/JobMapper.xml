@@ -153,6 +153,40 @@
 		ORDER BY updated_at DESC
 		LIMIT #{limit}
 	</select>
+
+	<!-- 学生主页相关查询 -->
+	<select id="findRankedJobs" resultMap="JobMap">
+		SELECT j.*
+		FROM jobs j
+		LEFT JOIN (
+			SELECT job_id, COUNT(*) as application_count
+			FROM applications
+			GROUP BY job_id
+		) ac ON j.id = ac.job_id
+		WHERE j.status = 20
+		ORDER BY ac.application_count DESC, j.updated_at DESC
+		LIMIT #{limit}
+	</select>
+
+	<select id="findRecentJobs" resultMap="JobMap">
+		SELECT * FROM jobs
+		WHERE status = 20
+		<if test="jobTypeFilter != null and jobTypeFilter != ''">
+			<choose>
+				<when test="jobTypeFilter == '企业招聘'">
+					AND work_nature = 2
+				</when>
+				<when test="jobTypeFilter == '实习招聘'">
+					AND work_nature = 1
+				</when>
+				<when test="jobTypeFilter == '事业单位招聘'">
+					<!-- 事业单位招聘可能需要根据type字段或其他字段判断，这里暂时不做筛选 -->
+				</when>
+			</choose>
+		</if>
+		ORDER BY created_at DESC
+		LIMIT #{limit}
+	</select>
 </mapper>
 
 

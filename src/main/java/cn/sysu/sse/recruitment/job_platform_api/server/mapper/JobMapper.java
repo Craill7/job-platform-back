@@ -38,4 +38,21 @@ public interface JobMapper {
 	List<Job> findOtherJobsByCompany(@Param("companyId") Integer companyId,
 	                                 @Param("excludeJobId") Integer excludeJobId,
 	                                 @Param("limit") int limit);
+	
+	// 学生主页相关方法
+	/**
+	 * 查询岗位热度排行榜（按投递数量排序）
+	 * @param limit 返回数量限制
+	 * @return 岗位列表
+	 */
+	List<Job> findRankedJobs(@Param("limit") Integer limit);
+	
+	/**
+	 * 查询近期招聘信息列表
+	 * @param jobTypeFilter 招聘类型筛选（企业招聘、事业单位招聘、实习招聘）
+	 * @param limit 返回数量限制
+	 * @return 岗位列表
+	 */
+	List<Job> findRecentJobs(@Param("jobTypeFilter") String jobTypeFilter,
+	                         @Param("limit") Integer limit);
 }
