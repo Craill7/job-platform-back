@@ -13,4 +13,8 @@
 	<select id="listAll" resultMap="TagCategoryMap">
 		SELECT * FROM tag_categories ORDER BY id ASC
 	</select>
+
+	<select id="findById" resultMap="TagCategoryMap">
+		SELECT * FROM tag_categories WHERE id = #{id}
+	</select>
 </mapper>

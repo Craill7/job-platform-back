@@ -10,4 +10,5 @@ public class Tag {
 	private String name;
 	private LocalDateTime createdAt;
 	private Integer categoryId;
+	private Integer createdBy;
 }

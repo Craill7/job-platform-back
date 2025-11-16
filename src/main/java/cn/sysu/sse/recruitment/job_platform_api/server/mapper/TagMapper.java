@@ -11,6 +11,8 @@ public interface TagMapper {
 	int insert(Tag tag);
 	List<Tag> listAll();
 	List<Tag> listByCategory(@Param("categoryId") Integer categoryId);
+
+	Tag findByName(@Param("name") String name);
 	
 	// 求职中心相关方法
 	List<Tag> findByNameIn(@Param("names") List<String> names);

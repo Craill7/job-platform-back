@@ -6,12 +6,17 @@
 		<result column="name" property="name"/>
 		<result column="created_at" property="createdAt"/>
 		<result column="category_id" property="categoryId"/>
+		<result column="created_by" property="createdBy"/>
 	</resultMap>
 
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag" useGeneratedKeys="true" keyProperty="id">
-		INSERT INTO tags (name, created_at, category_id)
-		VALUES (#{name}, NOW(), #{categoryId})
+		INSERT INTO tags (name, created_at, category_id, created_by)
+		VALUES (#{name}, NOW(), #{categoryId}, #{createdBy})
 	</insert>
+
+	<select id="findByName" resultMap="TagMap">
+		SELECT * FROM tags WHERE name = #{name} LIMIT 1
+	</select>
 
 	<select id="listAll" resultMap="TagMap">
 		SELECT * FROM tags ORDER BY id ASC
