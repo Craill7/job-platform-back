@@ -1,5 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.mapper;
 
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,6 +19,16 @@ public interface JobMapper {
 	                        @Param("offset") int offset,
 	                        @Param("limit") int limit);
 	long countByCompany(@Param("companyId") Integer companyId);
+	List<JobWithStatsDTO> searchCompanyJobs(@Param("companyId") Integer companyId,
+	                                      @Param("titleKeyword") String titleKeyword,
+	                                      @Param("workNature") Integer workNature,
+	                                      @Param("status") Integer status,
+	                                      @Param("offset") int offset,
+	                                      @Param("limit") int limit);
+	long countCompanyJobs(@Param("companyId") Integer companyId,
+	                     @Param("titleKeyword") String titleKeyword,
+	                     @Param("workNature") Integer workNature,
+	                     @Param("status") Integer status);
 	
 	// 求职中心相关方法
 	List<Job> searchJobs(@Param("keyword") String keyword,

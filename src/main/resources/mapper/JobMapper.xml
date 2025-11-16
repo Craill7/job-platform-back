@@ -76,6 +76,56 @@
 		SELECT COUNT(1) FROM jobs WHERE company_id = #{companyId}
 	</select>
 
+	<select id="searchCompanyJobs" resultType="cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO">
+		SELECT
+			j.id AS jobId,
+			j.title,
+			j.work_nature AS workNature,
+			j.status,
+			j.updated_at AS updatedAt,
+			COALESCE(total_stats.received_num, 0) AS receivedNum,
+			COALESCE(no_review_stats.no_review_num, 0) AS noReviewNum
+		FROM jobs j
+		LEFT JOIN (
+			SELECT job_id, COUNT(1) AS received_num
+			FROM applications
+			GROUP BY job_id
+		) total_stats ON total_stats.job_id = j.id
+		LEFT JOIN (
+			SELECT job_id, COUNT(1) AS no_review_num
+			FROM applications
+			WHERE status = 10
+			GROUP BY job_id
+		) no_review_stats ON no_review_stats.job_id = j.id
+		WHERE j.company_id = #{companyId}
+		<if test="titleKeyword != null and titleKeyword != ''">
+			AND j.title LIKE CONCAT('%', #{titleKeyword}, '%')
+		</if>
+		<if test="workNature != null">
+			AND j.work_nature = #{workNature}
+		</if>
+		<if test="status != null">
+			AND j.status = #{status}
+		</if>
+		ORDER BY j.updated_at DESC, j.id DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="countCompanyJobs" resultType="long">
+		SELECT COUNT(1)
+		FROM jobs j
+		WHERE j.company_id = #{companyId}
+		<if test="titleKeyword != null and titleKeyword != ''">
+			AND j.title LIKE CONCAT('%', #{titleKeyword}, '%')
+		</if>
+		<if test="workNature != null">
+			AND j.work_nature = #{workNature}
+		</if>
+		<if test="status != null">
+			AND j.status = #{status}
+		</if>
+	</select>
+
 	<!-- 求职中心相关查询 -->
 	<select id="searchJobs" resultMap="JobMap">
 		SELECT DISTINCT j.*
