@@ -31,14 +31,15 @@ public class AuthController {
 	 * @return 登录结果，包含JWT token和用户信息
 	 */
 	@PostMapping("/login")
-	public ApiResponse<LoginVO> login(@Valid @RequestBody LoginDTO req) {
+	public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginDTO req) {
 		logger.info("收到登录请求，邮箱：{}", req.getEmail());
 		LoginVO result = authService.login(req.getEmail(), req.getPassword());
 		logger.info("登录请求处理完成，结果代码：{}", result.getCode());
 		
 		// 根据业务结果码决定是成功还是失败
 		if (result.getCode() == 200) {
-			return ApiResponse.success(result);
+			LoginResponse payload = new LoginResponse(result.getToken(), result.getUserInfo());
+			return ApiResponse.of(200, result.getMessage(), payload);
 		} else {
 			return ApiResponse.error(result.getCode(), result.getMessage());
 		}
@@ -57,7 +58,7 @@ public class AuthController {
 		
 		// 根据业务结果码决定是成功还是失败
 		if (result.getCode() == 200) {
-			return ApiResponse.success(result);
+			return ApiResponse.of(200, result.getMessage(), null);
 		} else {
 			return ApiResponse.error(result.getCode(), result.getMessage());
 		}
@@ -78,9 +79,11 @@ public class AuthController {
 		
 		// 根据业务结果码决定是成功还是失败
 		if (result.getCode() == 200) {
-			return ApiResponse.success(result);
+			return ApiResponse.of(200, result.getMessage(), null);
 		} else {
 			return ApiResponse.error(result.getCode(), result.getMessage());
 		}
 	}
+
+	private record LoginResponse(String token, LoginVO.UserInfo userInfo) {}
 }
