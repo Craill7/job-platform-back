@@ -259,6 +259,10 @@
 			(#{jobId}, #{tagId})
 		</foreach>
 	</insert>
+
+	<delete id="deleteJobTagsByJobId">
+		DELETE FROM job_tags WHERE job_id = #{jobId}
+	</delete>
 </mapper>
 
 

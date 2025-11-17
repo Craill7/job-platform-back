@@ -18,4 +18,11 @@ public interface HrJobService {
 	 * @return 岗位详情
 	 */
 	HrJobDetailResponseVO getJobDetail(Integer userId, Integer jobId);
+
+	/**
+	 * 删除草稿岗位
+	 * @param userId HR用户ID
+	 * @param jobId 岗位ID
+	 */
+	void deleteDraftJob(Integer userId, Integer jobId);
 }

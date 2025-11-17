@@ -18,6 +18,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ApplicationMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,9 @@ public class HrJobServiceImpl implements HrJobService {
 
     @Autowired
     private TagMapper tagMapper;
+
+    @Autowired
+    private ApplicationMapper applicationMapper;
 
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
             Map.entry("internship", WorkNature.INTERNHIP),
@@ -206,6 +210,43 @@ public class HrJobServiceImpl implements HrJobService {
         HrJobDetailResponseVO response = new HrJobDetailResponseVO();
         response.setJobDetails(detailVO);
         return response;
+    }
+
+    /**
+     * 删除草稿岗位
+     * @param userId HR用户ID
+     * @param jobId 岗位ID
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteDraftJob(Integer userId, Integer jobId) {
+        logger.info("删除草稿岗位 userId={}, jobId={}", userId, jobId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Job job = jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        if (job.getStatus() != JobStatus.DRAFT) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "操作失败：只能删除草稿状态的岗位");
+        }
+
+        long applicationCount = applicationMapper.countByJob(jobId);
+        if (applicationCount > 0) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "该岗位已有投递记录，无法删除");
+        }
+
+        jobMapper.deleteJobTagsByJobId(jobId);
+        int affected = jobMapper.deleteById(jobId);
+        if (affected != 1) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "删除岗位失败");
+        }
+
+        logger.info("草稿岗位删除成功 jobId={} userId={}", jobId, userId);
     }
 
     private Integer resolveWorkNature(String workNature) {

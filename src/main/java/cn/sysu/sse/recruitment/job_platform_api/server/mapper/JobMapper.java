@@ -70,4 +70,5 @@ public interface JobMapper {
 	                         @Param("limit") Integer limit);
 
 	int batchInsertJobTags(@Param("jobId") Integer jobId, @Param("tagIds") List<Integer> tagIds);
+	int deleteJobTagsByJobId(@Param("jobId") Integer jobId);
 }

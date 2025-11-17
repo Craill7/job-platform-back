@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -74,6 +75,26 @@ public class HrJobController {
 		logger.info("收到岗位详情请求，userId={} jobId={}", userId, jobId);
 		HrJobDetailResponseVO detail = hrJobService.getJobDetail(userId, jobId);
 		return ApiResponse.success(detail);
+	}
+
+	/**
+	 * 删除草稿岗位
+	 * @param jobId 岗位ID
+	 * @param authentication 登录信息
+	 * @return 操作结果
+	 */
+	@DeleteMapping("/jobs/{job_id}")
+	public ApiResponse<Void> deleteDraftJob(
+			@PathVariable("job_id") Integer jobId,
+			Authentication authentication) {
+		Integer userId = getHrUserId(authentication);
+		if (userId == null) {
+			logger.warn("未登录用户尝试删除岗位 jobId={}", jobId);
+			return ApiResponse.error(401, "用户未登录");
+		}
+		logger.info("收到删除草稿岗位请求，userId={} jobId={}", userId, jobId);
+		hrJobService.deleteDraftJob(userId, jobId);
+		return ApiResponse.of(200, "删除草稿成功", null);
 	}
 
 	private Integer getHrUserId(Authentication authentication) {
