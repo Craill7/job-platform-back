@@ -8,6 +8,7 @@ import cn.sysu.sse.recruitment.job_platform_api.common.result.Pagination;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
@@ -15,6 +16,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -67,6 +70,14 @@ public class HrJobServiceImpl implements HrJobService {
             Map.entry("approved", JobStatus.APPROVED),
             Map.entry("rejected", JobStatus.REJECTED),
             Map.entry("closed", JobStatus.CLOSED)
+    );
+
+    private static final Map<JobStatus, Set<JobStatus>> STATUS_TRANSITIONS = Map.of(
+            JobStatus.DRAFT, EnumSet.of(JobStatus.DRAFT, JobStatus.PENDING),
+            JobStatus.PENDING, EnumSet.of(JobStatus.PENDING, JobStatus.APPROVED, JobStatus.REJECTED),
+            JobStatus.APPROVED, EnumSet.of(JobStatus.APPROVED, JobStatus.CLOSED),
+            JobStatus.REJECTED, EnumSet.of(JobStatus.REJECTED, JobStatus.PENDING),
+            JobStatus.CLOSED, EnumSet.of(JobStatus.CLOSED)
     );
 
     @Override
@@ -249,6 +260,77 @@ public class HrJobServiceImpl implements HrJobService {
         logger.info("草稿岗位删除成功 jobId={} userId={}", jobId, userId);
     }
 
+    /**
+     * 更新岗位
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HrJobUpdateResponseVO updateJob(Integer userId, Integer jobId, HrJobUpdateDTO dto) {
+        logger.info("更新岗位 userId={} jobId={} dto={}", userId, jobId, dto);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Job job = jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        JobStatus targetStatus = job.getStatus();
+        if (StringUtils.hasText(dto.getStatus())) {
+            JobStatus parsedStatus = parseJobStatusEnum(dto.getStatus(), true);
+            validateStatusTransition(job.getStatus(), parsedStatus);
+            targetStatus = parsedStatus;
+        }
+
+        WorkNature workNature = job.getWorkNature();
+        if (StringUtils.hasText(dto.getWorkNature())) {
+            workNature = parseWorkNatureEnum(dto.getWorkNature(), true);
+        }
+
+        SalaryRangeValue salaryRange = resolveSalaryRange(dto, job);
+        String resolvedAddressDetail = resolveAddressDetail(dto, job);
+        String resolvedWorkAddress = resolveWorkAddress(dto, resolvedAddressDetail, job);
+
+        job.setTitle(valueOrDefault(dto.getTitle(), job.getTitle()));
+        job.setDepartment(valueOrDefault(dto.getDepartment(), job.getDepartment()));
+        job.setDescription(valueOrDefault(dto.getDescription(), job.getDescription()));
+        job.setTechRequirements(valueOrDefault(dto.getTechRequirements(), job.getTechRequirements()));
+        job.setBonusPoints(valueOrDefault(dto.getBonusPoints(), job.getBonusPoints()));
+        job.setType(valueOrDefault(dto.getType(), job.getType()));
+        job.setHeadcount(valueOrDefault(dto.getHeadcount(), job.getHeadcount()));
+        job.setRequiredDegree(valueOrDefault(dto.getRequiredDegree(), job.getRequiredDegree()));
+        job.setRequiredStartDate(valueOrDefault(dto.getRequiredStartDate(), job.getRequiredStartDate()));
+        job.setDeadline(valueOrDefault(dto.getDeadline(), job.getDeadline()));
+        job.setProvinceId(valueOrDefault(dto.getProvinceId(), job.getProvinceId()));
+        job.setCityId(valueOrDefault(dto.getCityId(), job.getCityId()));
+        job.setAddressDetail(resolvedAddressDetail);
+        job.setWorkAddress(resolvedWorkAddress);
+        job.setWorkNature(workNature);
+        job.setStatus(targetStatus);
+        job.setMinSalary(salaryRange.getMinSalary());
+        job.setMaxSalary(salaryRange.getMaxSalary());
+
+        int affected = jobMapper.update(job);
+        if (affected != 1) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "更新岗位失败");
+        }
+
+        if (dto.getTags() != null) {
+            jobMapper.deleteJobTagsByJobId(jobId);
+            handleJobTags(jobId, dto.getTags());
+        }
+
+        HrJobUpdateResponseVO response = new HrJobUpdateResponseVO();
+        HrJobUpdateResponseVO.UpdatedJob updatedJob = new HrJobUpdateResponseVO.UpdatedJob();
+        updatedJob.setJobId(job.getId());
+        updatedJob.setTitle(job.getTitle());
+        updatedJob.setStatus(job.getStatus() != null ? job.getStatus().name().toLowerCase(Locale.ROOT) : null);
+        response.setUpdatedJob(updatedJob);
+        return response;
+    }
+
     private Integer resolveWorkNature(String workNature) {
         WorkNature enumVal = parseWorkNatureEnum(workNature, false);
         return enumVal != null ? enumVal.getCode() : null;
@@ -337,10 +419,20 @@ public class HrJobServiceImpl implements HrJobService {
     }
 
     private SalaryRangeValue resolveSalaryRange(HrJobCreateDTO dto) {
-        Integer min = dto.getMinSalary();
-        Integer max = dto.getMaxSalary();
-        if (StringUtils.hasText(dto.getSalaryRange())) {
-            SalaryRangeValue parsed = parseSalaryRangeString(dto.getSalaryRange());
+        return resolveSalaryRange(dto.getMinSalary(), dto.getMaxSalary(), dto.getSalaryRange());
+    }
+
+    private SalaryRangeValue resolveSalaryRange(HrJobUpdateDTO dto, Job existingJob) {
+        Integer min = dto.getMinSalary() != null ? dto.getMinSalary() : existingJob.getMinSalary();
+        Integer max = dto.getMaxSalary() != null ? dto.getMaxSalary() : existingJob.getMaxSalary();
+        return resolveSalaryRange(min, max, dto.getSalaryRange());
+    }
+
+    private SalaryRangeValue resolveSalaryRange(Integer minSalary, Integer maxSalary, String salaryRangeExpression) {
+        Integer min = minSalary;
+        Integer max = maxSalary;
+        if (StringUtils.hasText(salaryRangeExpression)) {
+            SalaryRangeValue parsed = parseSalaryRangeString(salaryRangeExpression);
             min = parsed.getMinSalary();
             max = parsed.getMaxSalary();
         }
@@ -415,6 +507,40 @@ public class HrJobServiceImpl implements HrJobService {
 
     private String normalizeKey(String raw) {
         return raw.trim().toLowerCase(Locale.ROOT).replace('_', '-').replace(" ", "-");
+    }
+
+    private void validateStatusTransition(JobStatus currentStatus, JobStatus targetStatus) {
+        if (targetStatus == null || currentStatus == targetStatus) {
+            return;
+        }
+        Set<JobStatus> allowed = STATUS_TRANSITIONS.getOrDefault(currentStatus, Collections.emptySet());
+        if (!allowed.contains(targetStatus)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "非法的岗位状态流转");
+        }
+    }
+
+    private <T> T valueOrDefault(T newValue, T oldValue) {
+        return newValue != null ? newValue : oldValue;
+    }
+
+    private String resolveAddressDetail(HrJobUpdateDTO dto, Job job) {
+        if (dto.getAddressDetail() != null) {
+            return dto.getAddressDetail();
+        }
+        if (StringUtils.hasText(dto.getLegacyLocation())) {
+            return dto.getLegacyLocation();
+        }
+        return job.getAddressDetail();
+    }
+
+    private String resolveWorkAddress(HrJobUpdateDTO dto, String resolvedAddressDetail, Job job) {
+        if (dto.getWorkAddress() != null) {
+            return dto.getWorkAddress();
+        }
+        if (!StringUtils.hasText(job.getWorkAddress())) {
+            return resolvedAddressDetail;
+        }
+        return job.getWorkAddress();
     }
 
     /**

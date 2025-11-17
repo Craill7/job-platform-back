@@ -2,9 +2,11 @@ package cn.sysu.sse.recruitment.job_platform_api.server.service;
 
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
 
 public interface HrJobService {
 	HrJobListResponseVO listCompanyJobs(Integer userId, HrJobListQueryDTO queryDTO);
@@ -25,4 +27,13 @@ public interface HrJobService {
 	 * @param jobId 岗位ID
 	 */
 	void deleteDraftJob(Integer userId, Integer jobId);
+
+	/**
+	 * 更新岗位信息
+	 * @param userId HR用户ID
+	 * @param jobId 岗位ID
+	 * @param dto 更新内容
+	 * @return 更新结果
+	 */
+	HrJobUpdateResponseVO updateJob(Integer userId, Integer jobId, HrJobUpdateDTO dto);
 }
