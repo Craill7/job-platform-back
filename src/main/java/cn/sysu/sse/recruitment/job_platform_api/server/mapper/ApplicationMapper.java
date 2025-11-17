@@ -1,5 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.mapper;
 
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CandidateApplicationSummaryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -18,6 +19,22 @@ public interface ApplicationMapper {
 	long countByJob(@Param("jobId") Integer jobId);
 	long countByCompany(@Param("companyId") Integer companyId);
 	long countProcessedByCompany(@Param("companyId") Integer companyId);
+
+	/**
+	 * 查询岗位下的人才列表
+	 */
+	List<CandidateApplicationSummaryDTO> listCandidatesByJob(@Param("jobId") Integer jobId,
+	                                                       @Param("nameKeyword") String nameKeyword,
+	                                                       @Param("status") Integer status,
+	                                                       @Param("offset") int offset,
+	                                                       @Param("limit") int limit);
+
+	/**
+	 * 统计岗位下的人才数量
+	 */
+	long countCandidatesByJob(@Param("jobId") Integer jobId,
+	                          @Param("nameKeyword") String nameKeyword,
+	                          @Param("status") Integer status);
 	
 	// 求职中心相关方法
 	Optional<Application> findByJobAndStudent(@Param("jobId") Integer jobId, @Param("studentUserId") Integer studentUserId);

@@ -1,10 +1,12 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.service.impl;
 
+import cn.sysu.sse.recruitment.job_platform_api.common.enums.ApplicationStatus;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.JobStatus;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.WorkNature;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
 import cn.sysu.sse.recruitment.job_platform_api.common.result.Pagination;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CandidateApplicationSummaryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
@@ -12,6 +14,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
@@ -398,6 +401,91 @@ public class HrJobServiceImpl implements HrJobService {
             logger.warn("未知的 work_nature code: {}", code);
             return null;
         }
+    }
+
+    @Override
+    public HrCandidateListResponseVO listCandidatesByJob(Integer userId,
+                                                         Integer jobId,
+                                                         String nameKeyword,
+                                                         Integer status,
+                                                         Integer page,
+                                                         Integer pageSize) {
+        logger.info("查询岗位下人才列表 userId={} jobId={} nameKeyword={} status={} page={} pageSize={}", userId, jobId, nameKeyword, status, page, pageSize);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        int currentPage = (page != null && page > 0) ? page : 1;
+        int currentPageSize = (pageSize != null && pageSize > 0) ? pageSize : 10;
+        int offset = (currentPage - 1) * currentPageSize;
+
+        List<CandidateApplicationSummaryDTO> summaries = applicationMapper.listCandidatesByJob(
+                jobId,
+                StringUtils.hasText(nameKeyword) ? nameKeyword.trim() : null,
+                status,
+                offset,
+                currentPageSize
+        );
+        long totalItems = applicationMapper.countCandidatesByJob(
+                jobId,
+                StringUtils.hasText(nameKeyword) ? nameKeyword.trim() : null,
+                status
+        );
+        long totalPages = (totalItems + currentPageSize - 1) / currentPageSize;
+
+        List<HrCandidateListResponseVO.CandidateSummaryVO> candidateList = summaries.stream()
+                .map(this::convertCandidateSummary)
+                .collect(Collectors.toList());
+
+        HrCandidateListResponseVO response = new HrCandidateListResponseVO();
+        response.setCandidateList(candidateList);
+        response.setPagination(new Pagination(totalItems, totalPages, currentPage, currentPageSize));
+        return response;
+    }
+
+    private HrCandidateListResponseVO.CandidateSummaryVO convertCandidateSummary(CandidateApplicationSummaryDTO dto) {
+        HrCandidateListResponseVO.CandidateSummaryVO vo = new HrCandidateListResponseVO.CandidateSummaryVO();
+        vo.setApplicationId(dto.getApplicationId());
+        vo.setCandidateName(dto.getCandidateName());
+        vo.setGrade(buildGrade(dto.getStartYear()));
+        vo.setDegree(mapDegree(dto.getDegreeLevel()));
+        vo.setResumeStatus(mapStatusToDisplay(dto.getStatus()));
+        return vo;
+    }
+
+    private String buildGrade(Integer startYear) {
+        return startYear != null ? startYear + "级" : null;
+    }
+
+    private String mapDegree(Integer degreeLevel) {
+        if (degreeLevel == null) {
+            return null;
+        }
+        return switch (degreeLevel) {
+            case 0 -> "bachelor";
+            case 1 -> "master";
+            case 2 -> "doctor";
+            default -> null;
+        };
+    }
+
+    private String mapStatusToDisplay(ApplicationStatus status) {
+        if (status == null) {
+            return "未知";
+        }
+        return switch (status) {
+            case SUBMITTED -> "已投递";
+            case CANDIDATE -> "候选人";
+            case INTERVIEW -> "面试邀请";
+            case PASSED -> "通过";
+            case REJECTED -> "拒绝";
+        };
     }
 
     private String mapJobStatus(Integer code) {
