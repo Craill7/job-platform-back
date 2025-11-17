@@ -7,6 +7,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import org.slf4j.Logger;
@@ -45,6 +46,23 @@ public class HrJobController {
 		logger.info("收到企业岗位列表请求，用户ID={}，参数={}", userId, queryDTO);
 		HrJobListResponseVO data = hrJobService.listCompanyJobs(userId, queryDTO);
 		return ApiResponse.success(data);
+	}
+
+	/**
+	 * 下线岗位
+	 */
+	@PutMapping("/jobs/{job_id}/status")
+	public ApiResponse<HrJobStatusResponseVO> closeJob(
+			@PathVariable("job_id") Integer jobId,
+			Authentication authentication) {
+		Integer userId = getHrUserId(authentication);
+		if (userId == null) {
+			logger.warn("未登录用户尝试下线岗位 jobId={}", jobId);
+			return ApiResponse.error(401, "用户未登录");
+		}
+		logger.info("收到下线岗位请求，userId={} jobId={}", userId, jobId);
+		HrJobStatusResponseVO result = hrJobService.closeJob(userId, jobId);
+		return ApiResponse.success(result);
 	}
 
 	/**

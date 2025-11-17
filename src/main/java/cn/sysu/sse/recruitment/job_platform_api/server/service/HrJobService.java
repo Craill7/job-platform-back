@@ -6,6 +6,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
 
 public interface HrJobService {
@@ -36,4 +37,12 @@ public interface HrJobService {
 	 * @return 更新结果
 	 */
 	HrJobUpdateResponseVO updateJob(Integer userId, Integer jobId, HrJobUpdateDTO dto);
+
+	/**
+	 * 下线岗位
+	 * @param userId HR用户ID
+	 * @param jobId 岗位ID
+	 * @return 岗位状态
+	 */
+	HrJobStatusResponseVO closeJob(Integer userId, Integer jobId);
 }

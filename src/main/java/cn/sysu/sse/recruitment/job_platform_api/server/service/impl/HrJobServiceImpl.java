@@ -16,12 +16,13 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ApplicationMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -331,6 +332,39 @@ public class HrJobServiceImpl implements HrJobService {
         return response;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HrJobStatusResponseVO closeJob(Integer userId, Integer jobId) {
+        logger.info("下线岗位 userId={} jobId={}", userId, jobId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Job job = jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        if (job.getStatus() == JobStatus.CLOSED) {
+            logger.info("岗位已是 closed，直接返回 jobId={} userId={}", jobId, userId);
+            return buildJobStatusResponse(job);
+        }
+
+        if (job.getStatus() != JobStatus.APPROVED) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "仅已发布岗位可下线");
+        }
+
+        job.setStatus(JobStatus.CLOSED);
+        int affected = jobMapper.update(job);
+        if (affected != 1) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "更新岗位状态失败");
+        }
+
+        logger.info("岗位下线成功 jobId={} userId={}", jobId, userId);
+        return buildJobStatusResponse(job);
+    }
+
     private Integer resolveWorkNature(String workNature) {
         WorkNature enumVal = parseWorkNatureEnum(workNature, false);
         return enumVal != null ? enumVal.getCode() : null;
@@ -543,11 +577,13 @@ public class HrJobServiceImpl implements HrJobService {
         return job.getWorkAddress();
     }
 
-    /**
-     * 构建岗位详情视图对象
-     * @param job 岗位实体
-     * @return 岗位详情视图
-     */
+    private HrJobStatusResponseVO buildJobStatusResponse(Job job) {
+        HrJobStatusResponseVO response = new HrJobStatusResponseVO();
+        response.setJobId(job.getId());
+        response.setStatus(job.getStatus() != null ? job.getStatus().name().toLowerCase(Locale.ROOT) : null);
+        return response;
+    }
+
     private HrJobDetailVO buildJobDetailVo(Job job) {
         HrJobDetailVO vo = new HrJobDetailVO();
         vo.setJobId(job.getId());
