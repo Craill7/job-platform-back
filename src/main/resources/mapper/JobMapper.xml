@@ -67,6 +67,10 @@
 		SELECT * FROM jobs WHERE id = #{id}
 	</select>
 
+	<select id="findByIdAndCompany" resultMap="JobMap">
+		SELECT * FROM jobs WHERE id = #{id} AND company_id = #{companyId}
+	</select>
+
 	<select id="countApprovedJobsByCompany" resultType="long">
 		SELECT COUNT(1) FROM jobs WHERE company_id = #{companyId} AND status = 20
 	</select>

@@ -10,7 +10,10 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -165,6 +169,42 @@ public class HrJobServiceImpl implements HrJobService {
 
         HrJobCreateResponseVO response = new HrJobCreateResponseVO();
         response.setNewJob(newJob);
+        return response;
+    }
+
+    /**
+     * 获取岗位详情
+     * @param userId HR用户ID
+     * @param jobId 岗位ID
+     * @return 岗位详情
+     */
+    @Override
+    public HrJobDetailResponseVO getJobDetail(Integer userId, Integer jobId) {
+        logger.info("查询岗位详情 userId={}, jobId={}", userId, jobId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Job job = jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        HrJobDetailVO detailVO = buildJobDetailVo(job);
+        List<Tag> tags = tagMapper.findTagsByJobId(jobId);
+        List<HrJobDetailVO.JobTagVO> tagVOList = (tags == null ? Collections.<Tag>emptyList() : tags).stream()
+                .map(tag -> {
+                    HrJobDetailVO.JobTagVO tagVO = new HrJobDetailVO.JobTagVO();
+                    tagVO.setTagId(tag.getId());
+                    tagVO.setTagName(tag.getName());
+                    return tagVO;
+                })
+                .collect(Collectors.toList());
+        detailVO.setTags(tagVOList);
+
+        HrJobDetailResponseVO response = new HrJobDetailResponseVO();
+        response.setJobDetails(detailVO);
         return response;
     }
 
@@ -334,6 +374,37 @@ public class HrJobServiceImpl implements HrJobService {
 
     private String normalizeKey(String raw) {
         return raw.trim().toLowerCase(Locale.ROOT).replace('_', '-').replace(" ", "-");
+    }
+
+    /**
+     * 构建岗位详情视图对象
+     * @param job 岗位实体
+     * @return 岗位详情视图
+     */
+    private HrJobDetailVO buildJobDetailVo(Job job) {
+        HrJobDetailVO vo = new HrJobDetailVO();
+        vo.setJobId(job.getId());
+        vo.setTitle(job.getTitle());
+        vo.setStatus(job.getStatus() != null ? job.getStatus().getCode() : null);
+        vo.setDescription(job.getDescription());
+        vo.setTechRequirements(job.getTechRequirements());
+        vo.setBonusPoints(job.getBonusPoints());
+        vo.setMinSalary(job.getMinSalary());
+        vo.setMaxSalary(job.getMaxSalary());
+        vo.setProvinceId(job.getProvinceId());
+        vo.setCityId(job.getCityId());
+        vo.setAddressDetail(job.getAddressDetail());
+        vo.setWorkNature(job.getWorkNature() != null ? job.getWorkNature().getCode() : null);
+        vo.setDepartment(job.getDepartment());
+        vo.setHeadcount(job.getHeadcount());
+        vo.setType(job.getType());
+        vo.setRequiredDegree(job.getRequiredDegree());
+        vo.setRequiredStartDate(job.getRequiredStartDate());
+        vo.setDeadline(job.getDeadline());
+        vo.setCreatedAt(job.getCreatedAt());
+        vo.setUpdatedAt(job.getUpdatedAt());
+        vo.setWorkAddress(job.getWorkAddress());
+        return vo;
     }
 
     private static class SalaryRangeValue {

@@ -4,6 +4,7 @@ import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +54,26 @@ public class HrJobController {
 		logger.info("收到创建岗位请求，用户ID={}，payload={}", userId, dto);
 		HrJobCreateResponseVO result = hrJobService.createJob(userId, dto);
 		return ApiResponse.of(201, "Created", result);
+	}
+
+	/**
+	 * 获取岗位详情
+	 * @param jobId 岗位ID
+	 * @param authentication 登录信息
+	 * @return 岗位详情
+	 */
+	@GetMapping("/jobs/{job_id}")
+	public ApiResponse<HrJobDetailResponseVO> getJobDetail(
+			@PathVariable("job_id") Integer jobId,
+			Authentication authentication) {
+		Integer userId = getHrUserId(authentication);
+		if (userId == null) {
+			logger.warn("未登录用户尝试获取岗位详情 jobId={}", jobId);
+			return ApiResponse.error(401, "用户未登录");
+		}
+		logger.info("收到岗位详情请求，userId={} jobId={}", userId, jobId);
+		HrJobDetailResponseVO detail = hrJobService.getJobDetail(userId, jobId);
+		return ApiResponse.success(detail);
 	}
 
 	private Integer getHrUserId(Authentication authentication) {
