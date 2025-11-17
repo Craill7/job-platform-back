@@ -1,6 +1,7 @@
 package cn.sysu.sse.recruitment.job_platform_api.common.enums;
 
 public enum JobStatus implements IntEnum {
+	DRAFT(1),
 	PENDING(10),
 	APPROVED(20),
 	REJECTED(30),

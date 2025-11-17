@@ -40,6 +40,14 @@
 		INNER JOIN job_tags jt ON t.id = jt.tag_id
 		WHERE jt.job_id = #{jobId}
 	</select>
+
+	<select id="findExistingIds" resultType="int">
+		SELECT id FROM tags
+		WHERE id IN
+		<foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+			#{tagId}
+		</foreach>
+	</select>
 </mapper>
 
 

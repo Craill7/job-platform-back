@@ -7,9 +7,12 @@
 		<result column="posted_by_user_id" property="postedByUserId"/>
 		<result column="title" property="title"/>
 		<result column="description" property="description"/>
+		<result column="tech_requirements" property="techRequirements"/>
 		<result column="min_salary" property="minSalary"/>
 		<result column="max_salary" property="maxSalary"/>
-		<result column="location" property="location"/>
+		<result column="province_id" property="provinceId"/>
+		<result column="city_id" property="cityId"/>
+		<result column="address_detail" property="addressDetail"/>
 		<result column="work_nature" property="workNature" javaType="cn.sysu.sse.recruitment.job_platform_api.common.enums.WorkNature"/>
 		<result column="deadline" property="deadline"/>
 		<result column="status" property="status" javaType="cn.sysu.sse.recruitment.job_platform_api.common.enums.JobStatus"/>
@@ -26,9 +29,9 @@
 
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO jobs
-		(company_id, posted_by_user_id, title, description, min_salary, max_salary, location, work_nature, deadline, status, created_at, updated_at, type, department, headcount, required_degree, required_start_date, bonus_points, work_address)
+		(company_id, posted_by_user_id, title, description, tech_requirements, min_salary, max_salary, province_id, city_id, address_detail, work_nature, deadline, status, created_at, updated_at, type, department, headcount, required_degree, required_start_date, bonus_points, work_address)
 		VALUES
-		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{minSalary}, #{maxSalary}, #{location}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
+		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{techRequirements}, #{minSalary}, #{maxSalary}, #{provinceId}, #{cityId}, #{addressDetail}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
 	</insert>
 
 	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job">
@@ -36,9 +39,12 @@
 		SET
 			title = #{title},
 			description = #{description},
+			tech_requirements = #{techRequirements},
 			min_salary = #{minSalary},
 			max_salary = #{maxSalary},
-			location = #{location},
+			province_id = #{provinceId},
+			city_id = #{cityId},
+			address_detail = #{addressDetail},
 			work_nature = #{workNature},
 			deadline = #{deadline},
 			status = #{status},
@@ -137,7 +143,7 @@
 			AND (j.title LIKE CONCAT('%', #{keyword}, '%') OR c.company_name LIKE CONCAT('%', #{keyword}, '%'))
 		</if>
 		<if test="location != null and location != ''">
-			AND j.location LIKE CONCAT('%', #{location}, '%')
+			AND j.address_detail LIKE CONCAT('%', #{location}, '%')
 		</if>
 		<if test="type != null and type != ''">
 			AND j.type = #{type}
@@ -241,6 +247,14 @@
 		ORDER BY created_at DESC
 		LIMIT #{limit}
 	</select>
+
+	<insert id="batchInsertJobTags">
+		INSERT INTO job_tags (job_id, tag_id)
+		VALUES
+		<foreach collection="tagIds" item="tagId" separator=",">
+			(#{jobId}, #{tagId})
+		</foreach>
+	</insert>
 </mapper>
 
 

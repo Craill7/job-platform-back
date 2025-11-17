@@ -1,7 +1,9 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.controller.hr;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import org.slf4j.Logger;
@@ -10,8 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/hr")
@@ -33,6 +39,19 @@ public class HrJobController {
 		logger.info("收到企业岗位列表请求，用户ID={}，参数={}", userId, queryDTO);
 		HrJobListResponseVO data = hrJobService.listCompanyJobs(userId, queryDTO);
 		return ApiResponse.success(data);
+	}
+
+	@PostMapping("/jobs")
+	public ApiResponse<HrJobCreateResponseVO> createJob(@RequestBody @Valid HrJobCreateDTO dto,
+			Authentication authentication) {
+		Integer userId = getHrUserId(authentication);
+		if (userId == null) {
+			logger.warn("未登录用户尝试创建岗位");
+			return ApiResponse.error(401, "用户未登录");
+		}
+		logger.info("收到创建岗位请求，用户ID={}，payload={}", userId, dto);
+		HrJobCreateResponseVO result = hrJobService.createJob(userId, dto);
+		return ApiResponse.of(201, "Created", result);
 	}
 
 	private Integer getHrUserId(Authentication authentication) {

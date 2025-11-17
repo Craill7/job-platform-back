@@ -17,4 +17,5 @@ public interface TagMapper {
 	// 求职中心相关方法
 	List<Tag> findByNameIn(@Param("names") List<String> names);
 	List<Tag> findTagsByJobId(@Param("jobId") Integer jobId);
+	List<Integer> findExistingIds(@Param("tagIds") List<Integer> tagIds);
 }

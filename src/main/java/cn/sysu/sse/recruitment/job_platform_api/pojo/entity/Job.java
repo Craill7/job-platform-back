@@ -14,9 +14,12 @@ public class Job {
 	private Integer postedByUserId;
 	private String title;
 	private String description;
+	private String techRequirements;
 	private Integer minSalary;
 	private Integer maxSalary;
-	private String location;
+	private Integer provinceId;
+	private Integer cityId;
+	private String addressDetail;
 	private WorkNature workNature;
 	private LocalDate deadline;
 	private JobStatus status;
@@ -29,4 +32,12 @@ public class Job {
 	private LocalDate requiredStartDate;
 	private String bonusPoints;
 	private String workAddress;
+
+	public String getLocation() {
+		return this.addressDetail;
+	}
+
+	public void setLocation(String location) {
+		this.addressDetail = location;
+	}
 }

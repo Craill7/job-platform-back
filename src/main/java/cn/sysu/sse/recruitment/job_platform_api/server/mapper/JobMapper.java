@@ -67,4 +67,6 @@ public interface JobMapper {
 	 */
 	List<Job> findRecentJobs(@Param("jobTypeFilter") String jobTypeFilter,
 	                         @Param("limit") Integer limit);
+
+	int batchInsertJobTags(@Param("jobId") Integer jobId, @Param("tagIds") List<Integer> tagIds);
 }
