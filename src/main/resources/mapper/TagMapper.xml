@@ -48,6 +48,25 @@
 			#{tagId}
 		</foreach>
 	</select>
+	<select id="findTagsByStudentId" resultMap="TagMap">
+		SELECT t.*
+		FROM tags t
+				 INNER JOIN students_tags st ON t.id = st.tag_id
+		WHERE st.user_id = #{studentUserId}
+	</select>
+
+	<insert id="batchInsertStudentTags">
+		INSERT INTO students_tags (user_id, tag_id)
+		VALUES
+		<foreach collection="tagIds" item="tagId" separator=",">
+			(#{studentUserId}, #{tagId})
+		</foreach>
+	</insert>
+
+	<delete id="deleteStudentTagsByUserId">
+		DELETE FROM students_tags WHERE user_id = #{studentUserId}
+	</delete>
+
 </mapper>
 
 
