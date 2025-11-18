@@ -7,6 +7,7 @@ import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
 import cn.sysu.sse.recruitment.job_platform_api.common.result.Pagination;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CandidateApplicationSummaryDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrApplicationStatusUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
@@ -17,6 +18,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Resume;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
@@ -81,6 +83,29 @@ public class HrJobServiceImpl implements HrJobService {
             Map.entry("approved", JobStatus.APPROVED),
             Map.entry("rejected", JobStatus.REJECTED),
             Map.entry("closed", JobStatus.CLOSED)
+    );
+
+    private static final Map<String, ApplicationStatus> APPLICATION_STATUS_TEXT_MAP = Map.ofEntries(
+            Map.entry("submitted", ApplicationStatus.SUBMITTED),
+            Map.entry("已投递", ApplicationStatus.SUBMITTED),
+            Map.entry("candidate", ApplicationStatus.CANDIDATE),
+            Map.entry("候选", ApplicationStatus.CANDIDATE),
+            Map.entry("候选人", ApplicationStatus.CANDIDATE),
+            Map.entry("interview", ApplicationStatus.INTERVIEW),
+            Map.entry("面试", ApplicationStatus.INTERVIEW),
+            Map.entry("面试邀请", ApplicationStatus.INTERVIEW),
+            Map.entry("passed", ApplicationStatus.PASSED),
+            Map.entry("通过", ApplicationStatus.PASSED),
+            Map.entry("rejected", ApplicationStatus.REJECTED),
+            Map.entry("拒绝", ApplicationStatus.REJECTED)
+    );
+
+    private static final Map<ApplicationStatus, Set<ApplicationStatus>> APPLICATION_STATUS_TRANSITIONS = Map.of(
+            ApplicationStatus.SUBMITTED, EnumSet.of(ApplicationStatus.CANDIDATE, ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.CANDIDATE, EnumSet.of(ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.INTERVIEW, EnumSet.of(ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.PASSED, EnumSet.of(ApplicationStatus.PASSED),
+            ApplicationStatus.REJECTED, EnumSet.of(ApplicationStatus.REJECTED)
     );
 
     private static final Map<JobStatus, Set<JobStatus>> STATUS_TRANSITIONS = Map.of(
@@ -160,6 +185,50 @@ public class HrJobServiceImpl implements HrJobService {
         return vo;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HrApplicationStatusResponseVO updateApplicationStatus(Integer userId,
+                                                                  Integer applicationId,
+                                                                  HrApplicationStatusUpdateDTO dto) {
+        logger.info("更新候选人投递状态 userId={} applicationId={} dto={}", userId, applicationId, dto);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请求体不能为空");
+        }
+
+        ApplicationStatus targetStatus = parseApplicationStatusInput(dto.getStatus());
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Application application = applicationMapper.findById(applicationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "投递记录不存在"));
+
+        jobMapper.findByIdAndCompany(application.getJobId(), company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "无权访问该投递记录"));
+
+        ApplicationStatus currentStatus = application.getStatus();
+        validateApplicationStatusTransition(currentStatus, targetStatus);
+
+        if (currentStatus != targetStatus) {
+            application.setStatus(targetStatus);
+            int updated = applicationMapper.update(application);
+            if (updated != 1) {
+                throw new BusinessException(ErrorCode.INTERNAL_ERROR, "更新投递状态失败");
+            }
+        } else {
+            logger.info("投递状态未变化，applicationId={} currentStatus={}", applicationId, currentStatus);
+        }
+
+        HrApplicationStatusResponseVO response = new HrApplicationStatusResponseVO();
+        response.setApplicationId(application.getId());
+        response.setStatusCode(targetStatus != null ? targetStatus.getCode() : null);
+        response.setStatus(mapStatusToDisplay(targetStatus));
+        return response;
+    }
+
     private String resolveResumeUrl(Long resumeId) {
         if (resumeId == null) {
             return null;
@@ -167,6 +236,38 @@ public class HrJobServiceImpl implements HrJobService {
         return resumeMapper.findById(resumeId)
                 .map(Resume::getFileUrl)
                 .orElse(null);
+    }
+
+    private ApplicationStatus parseApplicationStatusInput(String statusInput) {
+        if (!StringUtils.hasText(statusInput)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "status 不能为空");
+        }
+        String trimmed = statusInput.trim();
+        try {
+            return ApplicationStatus.fromCode(Integer.parseInt(trimmed));
+        } catch (NumberFormatException ignored) {
+        }
+
+        String normalized = trimmed.toLowerCase(Locale.ROOT).replace(" ", "");
+        ApplicationStatus status = APPLICATION_STATUS_TEXT_MAP.get(normalized);
+        if (status != null) {
+            return status;
+        }
+
+        throw new BusinessException(ErrorCode.BAD_REQUEST, "无效的投递状态");
+    }
+
+    private void validateApplicationStatusTransition(ApplicationStatus currentStatus, ApplicationStatus targetStatus) {
+        if (targetStatus == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "目标状态不能为空");
+        }
+        if (currentStatus == null || currentStatus == targetStatus) {
+            return;
+        }
+        Set<ApplicationStatus> allowed = APPLICATION_STATUS_TRANSITIONS.getOrDefault(currentStatus, Collections.emptySet());
+        if (!allowed.contains(targetStatus)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "非法的投递状态流转");
+        }
     }
 
     @Override

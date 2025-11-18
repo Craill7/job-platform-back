@@ -1,10 +1,12 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.service;
 
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrApplicationStatusUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
@@ -65,4 +67,13 @@ public interface HrJobService {
 	 * @return 简历详情
 	 */
 	HrApplicationResumeDetailVO getApplicationResumeDetail(Integer userId, Integer applicationId);
+
+	/**
+	 * 更新候选人投递状态
+	 * @param userId HR 用户 ID
+	 * @param applicationId 投递记录 ID
+	 * @param dto 状态更新请求
+	 * @return 更新后的状态
+	 */
+	HrApplicationStatusResponseVO updateApplicationStatus(Integer userId, Integer applicationId, HrApplicationStatusUpdateDTO dto);
 }

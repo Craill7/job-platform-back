@@ -1,10 +1,12 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.controller.hr;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrApplicationStatusUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
@@ -81,6 +83,21 @@ public class HrJobController {
         logger.info("收到候选人简历详情请求 userId={} applicationId={}", userId, applicationId);
         HrApplicationResumeDetailVO detail = hrJobService.getApplicationResumeDetail(userId, applicationId);
         return ApiResponse.success(detail);
+    }
+
+    @PutMapping("/applications/{id}/status")
+    public ApiResponse<HrApplicationStatusResponseVO> updateApplicationStatus(
+            @PathVariable("id") Integer applicationId,
+            @RequestBody @Valid HrApplicationStatusUpdateDTO dto,
+            Authentication authentication) {
+        Integer userId = getHrUserId(authentication);
+        if (userId == null) {
+            logger.warn("未登录用户尝试更新候选人状态 applicationId={}", applicationId);
+            return ApiResponse.error(401, "用户未登录");
+        }
+        logger.info("收到候选人状态更新请求 userId={} applicationId={} dto={}", userId, applicationId, dto);
+        HrApplicationStatusResponseVO result = hrJobService.updateApplicationStatus(userId, applicationId, dto);
+        return ApiResponse.success(result);
     }
 
     /**
