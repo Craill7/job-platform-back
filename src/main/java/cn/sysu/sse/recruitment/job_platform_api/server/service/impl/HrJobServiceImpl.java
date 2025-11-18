@@ -11,9 +11,12 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Resume;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
@@ -26,6 +29,7 @@ import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ApplicationMapper;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ResumeMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +63,9 @@ public class HrJobServiceImpl implements HrJobService {
 
     @Autowired
     private ApplicationMapper applicationMapper;
+
+    @Autowired
+    private ResumeMapper resumeMapper;
 
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
             Map.entry("internship", WorkNature.INTERNHIP),
@@ -128,6 +135,38 @@ public class HrJobServiceImpl implements HrJobService {
         response.setJobList(jobList);
         response.setPagination(pagination);
         return response;
+    }
+
+    @Override
+    public HrApplicationResumeDetailVO getApplicationResumeDetail(Integer userId, Integer applicationId) {
+        logger.info("获取候选人简历详情 userId={} applicationId={}", userId, applicationId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Application application = applicationMapper.findById(applicationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "投递记录不存在"));
+
+        jobMapper.findByIdAndCompany(application.getJobId(), company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "无权访问该投递记录"));
+
+        HrApplicationResumeDetailVO vo = new HrApplicationResumeDetailVO();
+        vo.setId(application.getId());
+        vo.setStatus(mapStatusToDisplay(application.getStatus()));
+        vo.setResumeUrl(resolveResumeUrl(application.getResumeId()));
+        return vo;
+    }
+
+    private String resolveResumeUrl(Long resumeId) {
+        if (resumeId == null) {
+            return null;
+        }
+        return resumeMapper.findById(resumeId)
+                .map(Resume::getFileUrl)
+                .orElse(null);
     }
 
     @Override

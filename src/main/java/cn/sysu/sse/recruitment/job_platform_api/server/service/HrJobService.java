@@ -4,6 +4,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
@@ -56,4 +57,12 @@ public interface HrJobService {
 	                                            Integer status,
 	                                            Integer page,
 	                                            Integer pageSize);
+
+	/**
+	 * 获取候选人简历详情
+	 * @param userId HR用户ID
+	 * @param applicationId 投递记录ID
+	 * @return 简历详情
+	 */
+	HrApplicationResumeDetailVO getApplicationResumeDetail(Integer userId, Integer applicationId);
 }

@@ -4,6 +4,7 @@ import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
@@ -66,6 +67,20 @@ public class HrJobController {
                 userId, jobId, nameKeyword, status, page, pageSize);
         HrCandidateListResponseVO result = hrJobService.listCandidatesByJob(userId, jobId, nameKeyword, status, page, pageSize);
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/applications/{id}")
+    public ApiResponse<HrApplicationResumeDetailVO> getApplicationResumeDetail(
+            @PathVariable("id") Integer applicationId,
+            Authentication authentication) {
+        Integer userId = getHrUserId(authentication);
+        if (userId == null) {
+            logger.warn("未登录用户尝试获取候选人简历详情 applicationId={}", applicationId);
+            return ApiResponse.error(401, "用户未登录");
+        }
+        logger.info("收到候选人简历详情请求 userId={} applicationId={}", userId, applicationId);
+        HrApplicationResumeDetailVO detail = hrJobService.getApplicationResumeDetail(userId, applicationId);
+        return ApiResponse.success(detail);
     }
 
     /**
