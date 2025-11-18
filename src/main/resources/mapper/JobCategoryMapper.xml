@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobCategoryMapper">
+	<select id="findByIds" parameterType="java.util.List" resultType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.JobCategory">
+		SELECT id, name
+		FROM t_job_categories
+		WHERE id IN
+		<foreach collection="ids" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+</mapper>
+

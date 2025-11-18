@@ -28,6 +28,7 @@ public class Job {
 	private Integer type;
 	private String department;
 	private Integer headcount;
+	private Integer viewCount;
 	private Integer requiredDegree;
 	private LocalDate requiredStartDate;
 	private String bonusPoints;
