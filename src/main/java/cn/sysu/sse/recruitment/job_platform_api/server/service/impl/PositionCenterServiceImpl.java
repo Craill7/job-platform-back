@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +47,9 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 	
 	@Autowired
 	private ResumeMapper resumeMapper;
+
+	@Autowired
+	private LocationMapper locationMapper;
 
 	@Override
 	public JobListResponseVO getJobList(JobListQueryDTO queryDTO, Integer studentUserId) {
@@ -75,6 +79,9 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			}
 		}
 		
+		// 根据名称解析省市ID
+		resolveLocationFilters(queryDTO);
+
 		// 分页参数
 		int page = queryDTO.getPage() != null && queryDTO.getPage() > 0 ? queryDTO.getPage() : 1;
 		int pageSize = queryDTO.getPageSize() != null && queryDTO.getPageSize() > 0 ? queryDTO.getPageSize() : 10;
@@ -82,9 +89,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		
 		// 查询岗位列表
 		List<Job> jobs = jobMapper.searchJobs(
-				queryDTO.getKeyword(),
-				queryDTO.getLocation(),
-				queryDTO.getType(),
+				queryDTO,
 				tagIds,
 				workNature,
 				offset,
@@ -93,13 +98,15 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		
 		// 查询总数
 		long total = jobMapper.countSearchJobs(
-				queryDTO.getKeyword(),
-				queryDTO.getLocation(),
-				queryDTO.getType(),
+				queryDTO,
 				tagIds,
 				workNature
 		);
 		
+		// 预加载省市名称
+		Map<Integer, Province> provinceMap = loadProvinces(jobs);
+		Map<Integer, City> cityMap = loadCities(jobs);
+
 		// 获取用户收藏的岗位ID列表
 		Set<Integer> favoriteJobIds = new HashSet<>();
 		if (studentUserId != null) {
@@ -130,10 +137,9 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 				vo.setSalaryRange("面议");
 			}
 			
-			vo.setLocation(job.getLocation());
+			vo.setAddress(buildDisplayAddress(job, provinceMap, cityMap));
 			vo.setWorkNature(job.getWorkNature() != null ? 
 					(job.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招") : null);
-			vo.setType(job.getType() != null ? String.valueOf(job.getType()) : null);
 			vo.setDepartment(job.getDepartment());
 			vo.setHeadcount(job.getHeadcount());
 			vo.setIsFavorited(favoriteJobIds.contains(job.getId()));
@@ -165,6 +171,10 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		List<Job> jobs = jobMapper.findFavoriteJobsByStudent(studentUserId, offset, ps);
 		long total = jobMapper.countFavoriteJobsByStudent(studentUserId);
 		
+		// 预加载省市名称
+		Map<Integer, Province> provinceMap = loadProvinces(jobs);
+		Map<Integer, City> cityMap = loadCities(jobs);
+
 		// 转换为VO（所有都是收藏的）
 		List<JobListItemVO> jobList = jobs.stream().map(job -> {
 			JobListItemVO vo = new JobListItemVO();
@@ -186,10 +196,9 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 				vo.setSalaryRange("面议");
 			}
 			
-			vo.setLocation(job.getLocation());
+			vo.setAddress(buildDisplayAddress(job, provinceMap, cityMap));
 			vo.setWorkNature(job.getWorkNature() != null ? 
 					(job.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招") : null);
-			vo.setType(job.getType() != null ? String.valueOf(job.getType()) : null);
 			vo.setDepartment(job.getDepartment());
 			vo.setHeadcount(job.getHeadcount());
 			vo.setIsFavorited(true); // 收藏列表中的都是已收藏
@@ -453,6 +462,85 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			vo.setUploadedAt(resume.getUploadedAt());
 			return vo;
 		}).collect(Collectors.toList());
+	}
+
+	private String resolveJobAddress(Job job) {
+		if (job == null) {
+			return null;
+		}
+		if (StringUtils.hasText(job.getAddressDetail())) {
+			return job.getAddressDetail();
+		}
+		if (StringUtils.hasText(job.getWorkAddress())) {
+			return job.getWorkAddress();
+		}
+		return null;
+	}
+
+	private void resolveLocationFilters(JobListQueryDTO queryDTO) {
+		if (queryDTO == null) {
+			return;
+		}
+
+		if (queryDTO.getProvinceId() == null && StringUtils.hasText(queryDTO.getProvince())) {
+			locationMapper.findProvinceByKeyword(queryDTO.getProvince().trim())
+					.ifPresent(province -> queryDTO.setProvinceId(province.getId()));
+		}
+
+		if (StringUtils.hasText(queryDTO.getCity()) && queryDTO.getCityId() == null) {
+			Integer provinceId = queryDTO.getProvinceId();
+			locationMapper.findCityByKeyword(queryDTO.getCity().trim(), provinceId)
+					.ifPresent(city -> {
+						queryDTO.setCityId(city.getId());
+						if (queryDTO.getProvinceId() == null) {
+							queryDTO.setProvinceId(city.getProvinceId());
+						}
+					});
+		}
+	}
+
+	private Map<Integer, Province> loadProvinces(Collection<Job> jobs) {
+		Set<Integer> ids = jobs.stream()
+				.map(Job::getProvinceId)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+		if (ids.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		return locationMapper.findProvincesByIds(new ArrayList<>(ids)).stream()
+				.collect(Collectors.toMap(Province::getId, Function.identity()));
+	}
+
+	private Map<Integer, City> loadCities(Collection<Job> jobs) {
+		Set<Integer> ids = jobs.stream()
+				.map(Job::getCityId)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+		if (ids.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		return locationMapper.findCitiesByIds(new ArrayList<>(ids)).stream()
+				.collect(Collectors.toMap(City::getId, Function.identity()));
+	}
+
+	private String buildDisplayAddress(Job job, Map<Integer, Province> provinceMap, Map<Integer, City> cityMap) {
+		StringBuilder sb = new StringBuilder();
+		if (job.getProvinceId() != null) {
+			Province province = provinceMap.get(job.getProvinceId());
+			if (province != null && StringUtils.hasText(province.getName())) {
+				sb.append(province.getName());
+			}
+		}
+		if (job.getCityId() != null) {
+			City city = cityMap.get(job.getCityId());
+			if (city != null && StringUtils.hasText(city.getName())) {
+				sb.append(city.getName());
+			}
+		}
+		if (sb.length() > 0) {
+			return sb.toString();
+		}
+		return resolveJobAddress(job);
 	}
 }
 

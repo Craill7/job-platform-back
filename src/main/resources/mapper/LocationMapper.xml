@@ -32,4 +32,44 @@
         ORDER BY id
     </select>
 
+    <!-- 根据关键字匹配省份（名称/代码，模糊匹配名称） -->
+    <select id="findProvinceByKeyword" parameterType="java.lang.String" resultMap="ProvinceResultMap">
+        SELECT id, code, name
+        FROM t_provinces
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+           OR code = #{keyword}
+        ORDER BY CHAR_LENGTH(name) ASC
+        LIMIT 1
+    </select>
+
+    <!-- 根据关键字匹配城市，可选限定省份 -->
+    <select id="findCityByKeyword" resultMap="CityResultMap">
+        SELECT id, province_id, code, name
+        FROM t_cities
+        WHERE (name LIKE CONCAT('%', #{keyword}, '%') OR code = #{keyword})
+        <if test="provinceId != null">
+            AND province_id = #{provinceId}
+        </if>
+        ORDER BY CHAR_LENGTH(name) ASC
+        LIMIT 1
+    </select>
+
+	<select id="findProvincesByIds" parameterType="java.util.List" resultMap="ProvinceResultMap">
+		SELECT id, code, name
+		FROM t_provinces
+		WHERE id IN
+		<foreach collection="ids" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+
+	<select id="findCitiesByIds" parameterType="java.util.List" resultMap="CityResultMap">
+		SELECT id, province_id, code, name
+		FROM t_cities
+		WHERE id IN
+		<foreach collection="ids" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+
 </mapper>

@@ -1,5 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.mapper;
 
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
 import org.apache.ibatis.annotations.Mapper;
@@ -32,16 +33,12 @@ public interface JobMapper {
 	                     @Param("status") Integer status);
 	
 	// 求职中心相关方法
-	List<Job> searchJobs(@Param("keyword") String keyword,
-	                     @Param("location") String location,
-	                     @Param("type") String type,
+	List<Job> searchJobs(@Param("criteria") JobListQueryDTO criteria,
 	                     @Param("tagIds") List<Integer> tagIds,
 	                     @Param("workNature") String workNature,
 	                     @Param("offset") int offset,
 	                     @Param("limit") int limit);
-	long countSearchJobs(@Param("keyword") String keyword,
-	                     @Param("location") String location,
-	                     @Param("type") String type,
+	long countSearchJobs(@Param("criteria") JobListQueryDTO criteria,
 	                     @Param("tagIds") List<Integer> tagIds,
 	                     @Param("workNature") String workNature);
 	List<Job> findFavoriteJobsByStudent(@Param("studentUserId") Integer studentUserId,
