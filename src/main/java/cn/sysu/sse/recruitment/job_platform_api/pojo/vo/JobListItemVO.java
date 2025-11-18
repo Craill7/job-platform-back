@@ -22,6 +22,9 @@ public class JobListItemVO {
 	@JsonProperty("work_nature")
 	private String workNature;
 
+	@JsonProperty("type")
+	private String type;
+
 	private String department;
 
 	@JsonProperty("headcount")

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.StringUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -145,11 +146,12 @@ public class PositionCenterController {
 	@GetMapping("/jobs/{job_id}")
 	public ApiResponse<JobDetailVO> getJobDetail(
 			@PathVariable("job_id") Integer jobId,
+			HttpServletRequest request,
 			Authentication authentication) {
 		logger.info("收到获取职位详情请求，职位ID：{}", jobId);
 		
 		Integer studentUserId = getStudentUserId(authentication);
-		JobDetailVO result = positionCenterService.getJobDetail(jobId, studentUserId);
+		JobDetailVO result = positionCenterService.getJobDetail(jobId, studentUserId, request);
 		
 		return ApiResponse.success(result);
 	}

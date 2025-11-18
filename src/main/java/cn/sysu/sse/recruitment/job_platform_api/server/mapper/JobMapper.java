@@ -48,6 +48,8 @@ public interface JobMapper {
 	List<Job> findOtherJobsByCompany(@Param("companyId") Integer companyId,
 	                                 @Param("excludeJobId") Integer excludeJobId,
 	                                 @Param("limit") int limit);
+
+	int increaseViewCount(@Param("jobId") Integer jobId);
 	
 	// 学生主页相关方法
 	/**

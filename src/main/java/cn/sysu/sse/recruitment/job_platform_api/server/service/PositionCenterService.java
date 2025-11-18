@@ -5,6 +5,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 
 import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * 求职中心服务接口
@@ -34,7 +35,7 @@ public interface PositionCenterService {
 	 * @param studentUserId 当前登录学生ID（可为null）
 	 * @return 职位详情
 	 */
-	JobDetailVO getJobDetail(Integer jobId, Integer studentUserId);
+	JobDetailVO getJobDetail(Integer jobId, Integer studentUserId, HttpServletRequest request);
 	
 	/**
 	 * 收藏岗位

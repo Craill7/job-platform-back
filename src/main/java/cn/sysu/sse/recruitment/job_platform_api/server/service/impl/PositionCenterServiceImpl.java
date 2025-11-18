@@ -6,6 +6,7 @@ import cn.sysu.sse.recruitment.job_platform_api.common.enums.WorkNature;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.ApplicationSubmitDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CompanyDictionaryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.*;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
@@ -22,6 +23,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 /**
  * 求职中心服务实现
  */
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 public class PositionCenterServiceImpl implements PositionCenterService {
 
 	private static final Logger logger = LoggerFactory.getLogger(PositionCenterServiceImpl.class);
+	private static final Set<String> MUNICIPALITIES = Set.of("北京市", "上海市", "天津市", "重庆市");
 
 	@Autowired
 	private JobMapper jobMapper;
@@ -50,6 +54,15 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 
 	@Autowired
 	private LocationMapper locationMapper;
+
+	@Autowired
+	private CompanyDictionaryMapper companyDictionaryMapper;
+
+	@Autowired
+	private JobCategoryMapper jobCategoryMapper;
+
+	@Autowired
+	private JobViewMapper jobViewMapper;
 
 	@Override
 	public JobListResponseVO getJobList(JobListQueryDTO queryDTO, Integer studentUserId) {
@@ -107,6 +120,8 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		Map<Integer, Province> provinceMap = loadProvinces(jobs);
 		Map<Integer, City> cityMap = loadCities(jobs);
 
+		Map<Integer, JobCategory> categoryMap = loadJobCategories(jobs);
+
 		// 获取用户收藏的岗位ID列表
 		Set<Integer> favoriteJobIds = new HashSet<>();
 		if (studentUserId != null) {
@@ -141,6 +156,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			vo.setWorkNature(job.getWorkNature() != null ? 
 					(job.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招") : null);
 			vo.setDepartment(job.getDepartment());
+			vo.setType(resolveJobCategoryName(job, categoryMap));
 			vo.setHeadcount(job.getHeadcount());
 			vo.setIsFavorited(favoriteJobIds.contains(job.getId()));
 			
@@ -175,6 +191,8 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		Map<Integer, Province> provinceMap = loadProvinces(jobs);
 		Map<Integer, City> cityMap = loadCities(jobs);
 
+		Map<Integer, JobCategory> categoryMap = loadJobCategories(jobs);
+
 		// 转换为VO（所有都是收藏的）
 		List<JobListItemVO> jobList = jobs.stream().map(job -> {
 			JobListItemVO vo = new JobListItemVO();
@@ -200,6 +218,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			vo.setWorkNature(job.getWorkNature() != null ? 
 					(job.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招") : null);
 			vo.setDepartment(job.getDepartment());
+			vo.setType(resolveJobCategoryName(job, categoryMap));
 			vo.setHeadcount(job.getHeadcount());
 			vo.setIsFavorited(true); // 收藏列表中的都是已收藏
 			
@@ -216,7 +235,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 	}
 
 	@Override
-	public JobDetailVO getJobDetail(Integer jobId, Integer studentUserId) {
+	public JobDetailVO getJobDetail(Integer jobId, Integer studentUserId, HttpServletRequest request) {
 		logger.info("获取职位详情，职位ID：{}，学生ID：{}", jobId, studentUserId);
 		
 		Optional<Job> jobOpt = jobMapper.findById(jobId);
@@ -228,7 +247,8 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		if (job.getStatus() != JobStatus.APPROVED) {
 			throw new BusinessException(ErrorCode.FORBIDDEN, "岗位未发布或已关闭");
 		}
-		
+		recordJobView(jobId, studentUserId, request);
+
 		JobDetailVO vo = new JobDetailVO();
 		vo.setJobId(job.getId());
 		vo.setTitle(job.getTitle());
@@ -241,9 +261,12 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		} else {
 			vo.setSalaryRange("面议");
 		}
-		
-		vo.setLocation(job.getLocation());
-		vo.setWorkNature(job.getWorkNature() != null ? 
+		Map<Integer, Province> provinceMap = loadProvinces(Collections.singleton(job));
+		Map<Integer, City> cityMap = loadCities(Collections.singleton(job));
+		Map<Integer, JobCategory> categoryMap = loadJobCategories(Collections.singleton(job));
+		vo.setAddress(buildDisplayAddress(job, provinceMap, cityMap));
+		vo.setAddressDetail(resolveAddressDetail(job));
+		vo.setWorkNature(job.getWorkNature() != null ?
 				(job.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招") : null);
 		
 		// 学历要求
@@ -262,10 +285,11 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		vo.setRequiredSkills(requiredSkills);
 		
 		vo.setHeadcount(job.getHeadcount());
+		vo.setType(resolveJobCategoryName(job, categoryMap));
+		vo.setTimes(Math.toIntExact(jobViewMapper.countByJob(jobId)));
 		vo.setPostedAt(job.getCreatedAt() != null ? job.getCreatedAt().toLocalDate() : null);
 		vo.setPositionDescription(job.getDescription());
 		vo.setPositionRequirements(job.getDescription()); // 这里可以根据实际需求调整
-		vo.setWorkAddress(job.getWorkAddress());
 		
 		// 解析加分项
 		if (StringUtils.hasText(job.getBonusPoints())) {
@@ -300,14 +324,19 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			companyInfo.setCompanyName(company.getCompanyName());
 			companyInfo.setContactPersonName(company.getContactPersonName());
 			companyInfo.setContactPersonPhone(company.getContactPersonPhone());
-			// 行业和规模需要查询关联表，这里简化处理
-			companyInfo.setCompanyIndustry(null);
-			companyInfo.setCompanyScale(null);
 			companyInfo.setCompanyWebsiteUrl(null);
-			
+
+			companyDictionaryMapper.findByCompanyId(company.getCompanyId()).ifPresent(dict -> {
+				companyInfo.setCompanyIndustry(dict.getIndustryName());
+				companyInfo.setCompanyNature(dict.getNatureName());
+				companyInfo.setCompanyScale(dict.getCompanyScale());
+			});
+
 			// 查询同公司其他岗位
-			List<Job> otherJobs = jobMapper.findOtherJobsByCompany(company.getCompanyId(), jobId, 5);
-			List<JobDetailVO.OtherJobVO> otherJobList = otherJobs.stream().map(otherJob -> {
+			List<Job> otherJobs = jobMapper.findOtherJobsByCompany(company.getCompanyId(), jobId, 1);
+			List<JobDetailVO.OtherJobVO> otherJobList = otherJobs.stream()
+					.limit(1)
+					.map(otherJob -> {
 				JobDetailVO.OtherJobVO otherJobVO = new JobDetailVO.OtherJobVO();
 				otherJobVO.setJobId(otherJob.getId());
 				otherJobVO.setTitle(otherJob.getTitle());
@@ -477,6 +506,19 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		return null;
 	}
 
+	private String resolveAddressDetail(Job job) {
+		if (job == null) {
+			return null;
+		}
+		if (StringUtils.hasText(job.getAddressDetail())) {
+			return job.getAddressDetail();
+		}
+		if (StringUtils.hasText(job.getWorkAddress())) {
+			return job.getWorkAddress();
+		}
+		return resolveJobAddress(job);
+	}
+
 	private void resolveLocationFilters(JobListQueryDTO queryDTO) {
 		if (queryDTO == null) {
 			return;
@@ -523,24 +565,75 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 				.collect(Collectors.toMap(City::getId, Function.identity()));
 	}
 
+	private void recordJobView(Integer jobId, Integer studentUserId, HttpServletRequest request) {
+		try {
+			JobView jobView = new JobView();
+			jobView.setJobId(jobId);
+			jobView.setViewerUserId(studentUserId);
+			jobView.setClientIp(request != null ? request.getRemoteAddr() : null);
+			jobView.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+			jobViewMapper.insert(jobView);
+			jobMapper.increaseViewCount(jobId);
+		} catch (Exception ex) {
+			logger.warn("记录岗位浏览失败 jobId={} studentUserId={}", jobId, studentUserId, ex);
+		}
+	}
+	private Map<Integer, JobCategory> loadJobCategories(Collection<Job> jobs) {
+		Set<Integer> ids = jobs.stream()
+				.map(Job::getType)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+		if (ids.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		return jobCategoryMapper.findByIds(new ArrayList<>(ids)).stream()
+				.collect(Collectors.toMap(JobCategory::getId, Function.identity()));
+	}
+
 	private String buildDisplayAddress(Job job, Map<Integer, Province> provinceMap, Map<Integer, City> cityMap) {
 		StringBuilder sb = new StringBuilder();
+		String provinceName = null;
+		String cityName = null;
 		if (job.getProvinceId() != null) {
 			Province province = provinceMap.get(job.getProvinceId());
 			if (province != null && StringUtils.hasText(province.getName())) {
-				sb.append(province.getName());
+				provinceName = province.getName();
+				sb.append(provinceName);
 			}
 		}
 		if (job.getCityId() != null) {
 			City city = cityMap.get(job.getCityId());
 			if (city != null && StringUtils.hasText(city.getName())) {
-				sb.append(city.getName());
+				cityName = city.getName();
+				boolean appendCity = true;
+				if (StringUtils.hasText(provinceName)) {
+					if (MUNICIPALITIES.contains(provinceName) && provinceName.equals(cityName)) {
+						appendCity = false;
+					}
+				}
+				if (appendCity) {
+					sb.append(cityName);
+				}
 			}
 		}
 		if (sb.length() > 0) {
 			return sb.toString();
 		}
 		return resolveJobAddress(job);
+	}
+
+	private String resolveJobCategoryName(Job job, Map<Integer, JobCategory> categoryMap) {
+		if (job == null) {
+			return null;
+		}
+		if (job.getType() != null) {
+			JobCategory category = categoryMap.get(job.getType());
+			if (category != null && StringUtils.hasText(category.getName())) {
+				return category.getName();
+			}
+			return String.valueOf(job.getType());
+		}
+		return null;
 	}
 }
 

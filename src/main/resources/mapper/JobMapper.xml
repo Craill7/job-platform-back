@@ -21,6 +21,7 @@
 		<result column="type" property="type"/>
 		<result column="department" property="department"/>
 		<result column="headcount" property="headcount"/>
+		<result column="view_count" property="viewCount"/>
 		<result column="required_degree" property="requiredDegree"/>
 		<result column="required_start_date" property="requiredStartDate"/>
 		<result column="bonus_points" property="bonusPoints"/>
@@ -29,9 +30,9 @@
 
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO jobs
-		(company_id, posted_by_user_id, title, description, tech_requirements, min_salary, max_salary, province_id, city_id, address_detail, work_nature, deadline, status, created_at, updated_at, type, department, headcount, required_degree, required_start_date, bonus_points, work_address)
+		(company_id, posted_by_user_id, title, description, tech_requirements, min_salary, max_salary, province_id, city_id, address_detail, work_nature, deadline, status, created_at, updated_at, type, department, headcount, view_count, required_degree, required_start_date, bonus_points, work_address)
 		VALUES
-		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{techRequirements}, #{minSalary}, #{maxSalary}, #{provinceId}, #{cityId}, #{addressDetail}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
+		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{techRequirements}, #{minSalary}, #{maxSalary}, #{provinceId}, #{cityId}, #{addressDetail}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, COALESCE(#{viewCount}, 0), #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
 	</insert>
 
 	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job">
@@ -52,6 +53,7 @@
 			type = #{type},
 			department = #{department},
 			headcount = #{headcount},
+			view_count = #{viewCount},
 			required_degree = #{requiredDegree},
 			required_start_date = #{requiredStartDate},
 			bonus_points = #{bonusPoints},
@@ -283,6 +285,11 @@
 		ORDER BY updated_at DESC
 		LIMIT #{limit}
 	</select>
+
+	<update id="increaseViewCount">
+		UPDATE jobs SET view_count = view_count + 1
+		WHERE id = #{jobId}
+	</update>
 
 	<!-- 学生主页相关查询 -->
 	<select id="findRankedJobs" resultMap="JobMap">
