@@ -13,7 +13,7 @@ spring:
       max-request-size: 5MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/job # 自行修改数据库名称
+    url: jdbc:mysql://localhost:3306/job_platform # 自行修改数据库名称
     username: root # 自行修改数据库用户名
     password: 123456 # 自行修改数据库密码
   flyway:

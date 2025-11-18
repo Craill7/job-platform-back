@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,13 +46,70 @@ public class PositionCenterController {
 	@GetMapping("/jobs")
 	public ApiResponse<JobListResponseVO> getJobList(
 			@ModelAttribute JobListQueryDTO queryDTO,
+			@RequestParam(value = "province", required = false) String province,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "company_name", required = false) String companyName,
+			@RequestParam(value = "min_salary", required = false) Integer minSalary,
+			@RequestParam(value = "max_salary", required = false) Integer maxSalary,
+			@RequestParam(value = "page_size", required = false) Integer pageSize,
+			@RequestParam(value = "work_nature", required = false) String workNatureParam,
 			Authentication authentication) {
+		mergeJobListQueryParams(queryDTO, province, city, title, companyName, minSalary, maxSalary, pageSize, workNatureParam);
 		logger.info("收到获取岗位列表请求，查询参数：{}", queryDTO);
 		
 		Integer studentUserId = getStudentUserId(authentication);
 		JobListResponseVO result = positionCenterService.getJobList(queryDTO, studentUserId);
 		
 		return ApiResponse.success(result);
+	}
+
+	private void mergeJobListQueryParams(JobListQueryDTO queryDTO,
+	                                     String province,
+	                                     String city,
+	                                     String title,
+	                                     String companyName,
+	                                     Integer minSalary,
+	                                     Integer maxSalary,
+	                                     Integer pageSize,
+	                                     String workNatureParam) {
+		if (StringUtils.hasText(title)) {
+			queryDTO.setTitle(title.trim());
+		}
+		if (StringUtils.hasText(companyName)) {
+			queryDTO.setCompanyName(companyName.trim());
+		}
+		if (StringUtils.hasText(province)) {
+			queryDTO.setProvince(province.trim());
+			queryDTO.setProvinceId(parseIntegerOrNull(province));
+		}
+		if (StringUtils.hasText(city)) {
+			queryDTO.setCity(city.trim());
+			queryDTO.setCityId(parseIntegerOrNull(city));
+		}
+		if (minSalary != null) {
+			queryDTO.setMinSalary(minSalary);
+		}
+		if (maxSalary != null) {
+			queryDTO.setMaxSalary(maxSalary);
+		}
+		if (pageSize != null && pageSize > 0) {
+			queryDTO.setPageSize(pageSize);
+		}
+		if (StringUtils.hasText(workNatureParam)) {
+			queryDTO.setWorkNature(workNatureParam.trim());
+		}
+	}
+
+	private Integer parseIntegerOrNull(String value) {
+		if (!StringUtils.hasText(value)) {
+			return null;
+		}
+		try {
+			return Integer.valueOf(value.trim());
+		} catch (NumberFormatException ex) {
+			return null;
+		}
 	}
 
 	/**

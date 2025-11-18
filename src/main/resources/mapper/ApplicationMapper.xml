@@ -66,6 +66,41 @@
 		WHERE id = #{id} AND student_user_id = #{studentUserId}
 		LIMIT 1
 	</select>
+
+	<select id="listCandidatesByJob" resultType="cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CandidateApplicationSummaryDTO">
+		SELECT
+			a.id AS applicationId,
+			s.full_name AS candidateName,
+			MIN(YEAR(edu.start_date)) AS startYear,
+			MAX(edu.degree_level) AS degreeLevel,
+			a.status
+		FROM applications a
+		LEFT JOIN students s ON s.user_id = a.student_user_id
+		LEFT JOIN education_experiences edu ON edu.student_user_id = a.student_user_id
+		WHERE a.job_id = #{jobId}
+		<if test="nameKeyword != null and nameKeyword != ''">
+			AND s.full_name LIKE CONCAT('%', #{nameKeyword}, '%')
+		</if>
+		<if test="status != null">
+			AND a.status = #{status}
+		</if>
+		GROUP BY a.id, s.full_name, a.status
+		ORDER BY a.updated_at DESC, a.id DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="countCandidatesByJob" resultType="long">
+		SELECT COUNT(DISTINCT a.id)
+		FROM applications a
+		LEFT JOIN students s ON s.user_id = a.student_user_id
+		WHERE a.job_id = #{jobId}
+		<if test="nameKeyword != null and nameKeyword != ''">
+			AND s.full_name LIKE CONCAT('%', #{nameKeyword}, '%')
+		</if>
+		<if test="status != null">
+			AND a.status = #{status}
+		</if>
+	</select>
 </mapper>
 
 

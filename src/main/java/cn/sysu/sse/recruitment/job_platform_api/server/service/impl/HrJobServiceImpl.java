@@ -1,27 +1,37 @@
 package cn.sysu.sse.recruitment.job_platform_api.server.service.impl;
 
+import cn.sysu.sse.recruitment.job_platform_api.common.enums.ApplicationStatus;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.JobStatus;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.WorkNature;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
 import cn.sysu.sse.recruitment.job_platform_api.common.result.Pagination;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.CandidateApplicationSummaryDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrApplicationStatusUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Resume;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ApplicationMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ResumeMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +66,9 @@ public class HrJobServiceImpl implements HrJobService {
     @Autowired
     private ApplicationMapper applicationMapper;
 
+    @Autowired
+    private ResumeMapper resumeMapper;
+
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
             Map.entry("internship", WorkNature.INTERNHIP),
             Map.entry("full-time", WorkNature.FULL_TIME),
@@ -70,6 +83,29 @@ public class HrJobServiceImpl implements HrJobService {
             Map.entry("approved", JobStatus.APPROVED),
             Map.entry("rejected", JobStatus.REJECTED),
             Map.entry("closed", JobStatus.CLOSED)
+    );
+
+    private static final Map<String, ApplicationStatus> APPLICATION_STATUS_TEXT_MAP = Map.ofEntries(
+            Map.entry("submitted", ApplicationStatus.SUBMITTED),
+            Map.entry("已投递", ApplicationStatus.SUBMITTED),
+            Map.entry("candidate", ApplicationStatus.CANDIDATE),
+            Map.entry("候选", ApplicationStatus.CANDIDATE),
+            Map.entry("候选人", ApplicationStatus.CANDIDATE),
+            Map.entry("interview", ApplicationStatus.INTERVIEW),
+            Map.entry("面试", ApplicationStatus.INTERVIEW),
+            Map.entry("面试邀请", ApplicationStatus.INTERVIEW),
+            Map.entry("passed", ApplicationStatus.PASSED),
+            Map.entry("通过", ApplicationStatus.PASSED),
+            Map.entry("rejected", ApplicationStatus.REJECTED),
+            Map.entry("拒绝", ApplicationStatus.REJECTED)
+    );
+
+    private static final Map<ApplicationStatus, Set<ApplicationStatus>> APPLICATION_STATUS_TRANSITIONS = Map.of(
+            ApplicationStatus.SUBMITTED, EnumSet.of(ApplicationStatus.CANDIDATE, ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.CANDIDATE, EnumSet.of(ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.INTERVIEW, EnumSet.of(ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.PASSED, EnumSet.of(ApplicationStatus.PASSED),
+            ApplicationStatus.REJECTED, EnumSet.of(ApplicationStatus.REJECTED)
     );
 
     private static final Map<JobStatus, Set<JobStatus>> STATUS_TRANSITIONS = Map.of(
@@ -124,6 +160,114 @@ public class HrJobServiceImpl implements HrJobService {
         response.setJobList(jobList);
         response.setPagination(pagination);
         return response;
+    }
+
+    @Override
+    public HrApplicationResumeDetailVO getApplicationResumeDetail(Integer userId, Integer applicationId) {
+        logger.info("获取候选人简历详情 userId={} applicationId={}", userId, applicationId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Application application = applicationMapper.findById(applicationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "投递记录不存在"));
+
+        jobMapper.findByIdAndCompany(application.getJobId(), company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "无权访问该投递记录"));
+
+        HrApplicationResumeDetailVO vo = new HrApplicationResumeDetailVO();
+        vo.setId(application.getId());
+        vo.setStatus(mapStatusToDisplay(application.getStatus()));
+        vo.setResumeUrl(resolveResumeUrl(application.getResumeId()));
+        return vo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HrApplicationStatusResponseVO updateApplicationStatus(Integer userId,
+                                                                  Integer applicationId,
+                                                                  HrApplicationStatusUpdateDTO dto) {
+        logger.info("更新候选人投递状态 userId={} applicationId={} dto={}", userId, applicationId, dto);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请求体不能为空");
+        }
+
+        ApplicationStatus targetStatus = parseApplicationStatusInput(dto.getStatus());
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Application application = applicationMapper.findById(applicationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "投递记录不存在"));
+
+        jobMapper.findByIdAndCompany(application.getJobId(), company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "无权访问该投递记录"));
+
+        ApplicationStatus currentStatus = application.getStatus();
+        validateApplicationStatusTransition(currentStatus, targetStatus);
+
+        if (currentStatus != targetStatus) {
+            application.setStatus(targetStatus);
+            int updated = applicationMapper.update(application);
+            if (updated != 1) {
+                throw new BusinessException(ErrorCode.INTERNAL_ERROR, "更新投递状态失败");
+            }
+        } else {
+            logger.info("投递状态未变化，applicationId={} currentStatus={}", applicationId, currentStatus);
+        }
+
+        HrApplicationStatusResponseVO response = new HrApplicationStatusResponseVO();
+        response.setApplicationId(application.getId());
+        response.setStatusCode(targetStatus != null ? targetStatus.getCode() : null);
+        response.setStatus(mapStatusToDisplay(targetStatus));
+        return response;
+    }
+
+    private String resolveResumeUrl(Long resumeId) {
+        if (resumeId == null) {
+            return null;
+        }
+        return resumeMapper.findById(resumeId)
+                .map(Resume::getFileUrl)
+                .orElse(null);
+    }
+
+    private ApplicationStatus parseApplicationStatusInput(String statusInput) {
+        if (!StringUtils.hasText(statusInput)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "status 不能为空");
+        }
+        String trimmed = statusInput.trim();
+        try {
+            return ApplicationStatus.fromCode(Integer.parseInt(trimmed));
+        } catch (NumberFormatException ignored) {
+        }
+
+        String normalized = trimmed.toLowerCase(Locale.ROOT).replace(" ", "");
+        ApplicationStatus status = APPLICATION_STATUS_TEXT_MAP.get(normalized);
+        if (status != null) {
+            return status;
+        }
+
+        throw new BusinessException(ErrorCode.BAD_REQUEST, "无效的投递状态");
+    }
+
+    private void validateApplicationStatusTransition(ApplicationStatus currentStatus, ApplicationStatus targetStatus) {
+        if (targetStatus == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "目标状态不能为空");
+        }
+        if (currentStatus == null || currentStatus == targetStatus) {
+            return;
+        }
+        Set<ApplicationStatus> allowed = APPLICATION_STATUS_TRANSITIONS.getOrDefault(currentStatus, Collections.emptySet());
+        if (!allowed.contains(targetStatus)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "非法的投递状态流转");
+        }
     }
 
     @Override
@@ -331,6 +475,39 @@ public class HrJobServiceImpl implements HrJobService {
         return response;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public HrJobStatusResponseVO closeJob(Integer userId, Integer jobId) {
+        logger.info("下线岗位 userId={} jobId={}", userId, jobId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Job job = jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        if (job.getStatus() == JobStatus.CLOSED) {
+            logger.info("岗位已是 closed，直接返回 jobId={} userId={}", jobId, userId);
+            return buildJobStatusResponse(job);
+        }
+
+        if (job.getStatus() != JobStatus.APPROVED) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "仅已发布岗位可下线");
+        }
+
+        job.setStatus(JobStatus.CLOSED);
+        int affected = jobMapper.update(job);
+        if (affected != 1) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "更新岗位状态失败");
+        }
+
+        logger.info("岗位下线成功 jobId={} userId={}", jobId, userId);
+        return buildJobStatusResponse(job);
+    }
+
     private Integer resolveWorkNature(String workNature) {
         WorkNature enumVal = parseWorkNatureEnum(workNature, false);
         return enumVal != null ? enumVal.getCode() : null;
@@ -364,6 +541,91 @@ public class HrJobServiceImpl implements HrJobService {
             logger.warn("未知的 work_nature code: {}", code);
             return null;
         }
+    }
+
+    @Override
+    public HrCandidateListResponseVO listCandidatesByJob(Integer userId,
+                                                         Integer jobId,
+                                                         String nameKeyword,
+                                                         Integer status,
+                                                         Integer page,
+                                                         Integer pageSize) {
+        logger.info("查询岗位下人才列表 userId={} jobId={} nameKeyword={} status={} page={} pageSize={}", userId, jobId, nameKeyword, status, page, pageSize);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        int currentPage = (page != null && page > 0) ? page : 1;
+        int currentPageSize = (pageSize != null && pageSize > 0) ? pageSize : 10;
+        int offset = (currentPage - 1) * currentPageSize;
+
+        List<CandidateApplicationSummaryDTO> summaries = applicationMapper.listCandidatesByJob(
+                jobId,
+                StringUtils.hasText(nameKeyword) ? nameKeyword.trim() : null,
+                status,
+                offset,
+                currentPageSize
+        );
+        long totalItems = applicationMapper.countCandidatesByJob(
+                jobId,
+                StringUtils.hasText(nameKeyword) ? nameKeyword.trim() : null,
+                status
+        );
+        long totalPages = (totalItems + currentPageSize - 1) / currentPageSize;
+
+        List<HrCandidateListResponseVO.CandidateSummaryVO> candidateList = summaries.stream()
+                .map(this::convertCandidateSummary)
+                .collect(Collectors.toList());
+
+        HrCandidateListResponseVO response = new HrCandidateListResponseVO();
+        response.setCandidateList(candidateList);
+        response.setPagination(new Pagination(totalItems, totalPages, currentPage, currentPageSize));
+        return response;
+    }
+
+    private HrCandidateListResponseVO.CandidateSummaryVO convertCandidateSummary(CandidateApplicationSummaryDTO dto) {
+        HrCandidateListResponseVO.CandidateSummaryVO vo = new HrCandidateListResponseVO.CandidateSummaryVO();
+        vo.setApplicationId(dto.getApplicationId());
+        vo.setCandidateName(dto.getCandidateName());
+        vo.setGrade(buildGrade(dto.getStartYear()));
+        vo.setDegree(mapDegree(dto.getDegreeLevel()));
+        vo.setResumeStatus(mapStatusToDisplay(dto.getStatus()));
+        return vo;
+    }
+
+    private String buildGrade(Integer startYear) {
+        return startYear != null ? startYear + "级" : null;
+    }
+
+    private String mapDegree(Integer degreeLevel) {
+        if (degreeLevel == null) {
+            return null;
+        }
+        return switch (degreeLevel) {
+            case 0 -> "bachelor";
+            case 1 -> "master";
+            case 2 -> "doctor";
+            default -> null;
+        };
+    }
+
+    private String mapStatusToDisplay(ApplicationStatus status) {
+        if (status == null) {
+            return "未知";
+        }
+        return switch (status) {
+            case SUBMITTED -> "已投递";
+            case CANDIDATE -> "候选人";
+            case INTERVIEW -> "面试邀请";
+            case PASSED -> "通过";
+            case REJECTED -> "拒绝";
+        };
     }
 
     private String mapJobStatus(Integer code) {
@@ -543,11 +805,13 @@ public class HrJobServiceImpl implements HrJobService {
         return job.getWorkAddress();
     }
 
-    /**
-     * 构建岗位详情视图对象
-     * @param job 岗位实体
-     * @return 岗位详情视图
-     */
+    private HrJobStatusResponseVO buildJobStatusResponse(Job job) {
+        HrJobStatusResponseVO response = new HrJobStatusResponseVO();
+        response.setJobId(job.getId());
+        response.setStatus(job.getStatus() != null ? job.getStatus().name().toLowerCase(Locale.ROOT) : null);
+        return response;
+    }
+
     private HrJobDetailVO buildJobDetailVo(Job job) {
         HrJobDetailVO vo = new HrJobDetailVO();
         vo.setJobId(job.getId());
