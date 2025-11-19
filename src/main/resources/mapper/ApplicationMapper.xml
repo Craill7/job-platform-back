@@ -11,6 +11,23 @@
 		<result column="updated_at" property="updatedAt"/>
 	</resultMap>
 
+	<resultMap id="DeliveryJobMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryJobDTO">
+		<result column="applicationId" property="applicationId"/>
+		<result column="status" property="status" javaType="cn.sysu.sse.recruitment.job_platform_api.common.enums.ApplicationStatus"/>
+		<result column="submittedAt" property="submittedAt"/>
+		<result column="jobId" property="jobId"/>
+		<result column="jobTitle" property="jobTitle"/>
+		<result column="department" property="department"/>
+		<result column="minSalary" property="minSalary"/>
+		<result column="maxSalary" property="maxSalary"/>
+		<result column="provinceId" property="provinceId"/>
+		<result column="cityId" property="cityId"/>
+		<result column="addressDetail" property="addressDetail"/>
+		<result column="workNature" property="workNature" javaType="cn.sysu.sse.recruitment.job_platform_api.common.enums.WorkNature"/>
+		<result column="companyName" property="companyName"/>
+		<result column="logoUrl" property="logoUrl"/>
+	</resultMap>
+
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO applications (job_id, student_user_id, resume_id, status, submitted_at, updated_at)
 		VALUES (#{jobId}, #{studentUserId}, #{resumeId}, #{status}, #{submittedAt}, #{updatedAt})
@@ -99,6 +116,52 @@
 		</if>
 		<if test="status != null">
 			AND a.status = #{status}
+		</if>
+	</select>
+
+	<!-- 查询学生已投递的岗位列表 -->
+	<select id="findDeliveryJobsByStudent" resultMap="DeliveryJobMap">
+		SELECT
+			a.id AS applicationId,
+			a.status,
+			a.submitted_at AS submittedAt,
+			j.id AS jobId,
+			j.title AS jobTitle,
+			j.department,
+			j.min_salary AS minSalary,
+			j.max_salary AS maxSalary,
+			j.province_id AS provinceId,
+			j.city_id AS cityId,
+			j.address_detail AS addressDetail,
+			j.work_nature AS workNature,
+			c.company_name AS companyName,
+			c.logo_url AS logoUrl
+		FROM applications a
+		INNER JOIN jobs j ON a.job_id = j.id
+		INNER JOIN companies c ON j.company_id = c.company_id
+		WHERE a.student_user_id = #{studentUserId}
+		<if test="jobTitle != null and jobTitle != ''">
+			AND j.title LIKE CONCAT('%', #{jobTitle}, '%')
+		</if>
+		<if test="companyName != null and companyName != ''">
+			AND c.company_name LIKE CONCAT('%', #{companyName}, '%')
+		</if>
+		ORDER BY a.submitted_at DESC, a.id DESC
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<!-- 统计学生已投递的岗位数量 -->
+	<select id="countDeliveryJobsByStudent" resultType="long">
+		SELECT COUNT(1)
+		FROM applications a
+		INNER JOIN jobs j ON a.job_id = j.id
+		INNER JOIN companies c ON j.company_id = c.company_id
+		WHERE a.student_user_id = #{studentUserId}
+		<if test="jobTitle != null and jobTitle != ''">
+			AND j.title LIKE CONCAT('%', #{jobTitle}, '%')
+		</if>
+		<if test="companyName != null and companyName != ''">
+			AND c.company_name LIKE CONCAT('%', #{companyName}, '%')
 		</if>
 	</select>
 </mapper>

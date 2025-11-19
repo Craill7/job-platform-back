@@ -250,10 +250,16 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 		vo.setId(application.getId());
 		
 		// 查询状态详情
-		String statusName = convertStatusToChinese(application.getStatus());
-		String statusDetail = null;
-		if (application.getStatus() != null) {
-			applicationStatusMapper.findByCode(application.getStatus().getCode())
+		// 注意：状态 20（候选人）在学生端要显示为"已投递"
+		ApplicationStatus displayStatus = application.getStatus();
+		if (application.getStatus() == ApplicationStatus.CANDIDATE) {
+			// 状态 20 在学生端显示为状态 10（已投递）
+			displayStatus = ApplicationStatus.SUBMITTED;
+		}
+		
+		String statusName = convertStatusToChinese(displayStatus);
+		if (displayStatus != null) {
+			applicationStatusMapper.findByCode(displayStatus.getCode())
 					.ifPresent(statusEntity -> {
 						vo.setStatus(statusEntity.getName());
 						vo.setStatusDetail(statusEntity.getDetail());
@@ -264,7 +270,7 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 			vo.setStatus(statusName);
 		}
 		if (vo.getStatusDetail() == null) {
-			vo.setStatusDetail(getDefaultStatusDetail(application.getStatus()));
+			vo.setStatusDetail(getDefaultStatusDetail(displayStatus));
 		}
 		
 		vo.setSubmittedAt(application.getSubmittedAt());

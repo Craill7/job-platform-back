@@ -74,5 +74,13 @@ public interface PositionCenterService {
 	 * @return 简历文件列表
 	 */
 	List<ResumeFileVO> getResumeFiles(Integer studentUserId);
+	
+	/**
+	 * 获取已投递岗位列表
+	 * @param queryDTO 查询参数
+	 * @param studentUserId 当前登录学生ID
+	 * @return 已投递岗位列表响应
+	 */
+	DeliveryListResponseVO getDeliveryList(cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryListQueryDTO queryDTO, Integer studentUserId);
 }
 

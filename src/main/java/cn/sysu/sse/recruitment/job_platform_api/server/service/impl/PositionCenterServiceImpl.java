@@ -635,5 +635,173 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		}
 		return null;
 	}
+
+	@Override
+	public DeliveryListResponseVO getDeliveryList(cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryListQueryDTO queryDTO, Integer studentUserId) {
+		logger.info("获取已投递岗位列表，查询参数：{}，学生ID：{}", queryDTO, studentUserId);
+		
+		if (studentUserId == null) {
+			throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+		}
+		
+		// 分页参数
+		int page = queryDTO.getPage() != null && queryDTO.getPage() > 0 ? queryDTO.getPage() : 1;
+		int pageSize = queryDTO.getPageSize() != null && queryDTO.getPageSize() > 0 ? queryDTO.getPageSize() : 10;
+		int offset = (page - 1) * pageSize;
+		
+		// 查询已投递岗位列表
+		List<cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryJobDTO> deliveryJobs = applicationMapper.findDeliveryJobsByStudent(
+				studentUserId,
+				queryDTO.getJobTitle(),
+				queryDTO.getCompanyName(),
+				offset,
+				pageSize
+		);
+		
+		// 查询总数
+		long total = applicationMapper.countDeliveryJobsByStudent(
+				studentUserId,
+				queryDTO.getJobTitle(),
+				queryDTO.getCompanyName()
+		);
+		
+		// 预加载省市名称
+		Set<Integer> provinceIds = deliveryJobs.stream()
+				.map(cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryJobDTO::getProvinceId)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+		Set<Integer> cityIds = deliveryJobs.stream()
+				.map(cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryJobDTO::getCityId)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+		
+		final Map<Integer, Province> provinceMap;
+		final Map<Integer, City> cityMap;
+		if (!provinceIds.isEmpty()) {
+			provinceMap = locationMapper.findProvincesByIds(new ArrayList<>(provinceIds)).stream()
+					.collect(Collectors.toMap(Province::getId, Function.identity()));
+		} else {
+			provinceMap = Collections.emptyMap();
+		}
+		if (!cityIds.isEmpty()) {
+			cityMap = locationMapper.findCitiesByIds(new ArrayList<>(cityIds)).stream()
+					.collect(Collectors.toMap(City::getId, Function.identity()));
+		} else {
+			cityMap = Collections.emptyMap();
+		}
+		
+		// 转换为VO
+		List<DeliveryListItemVO> jobList = deliveryJobs.stream().map(dto -> {
+			DeliveryListItemVO vo = new DeliveryListItemVO();
+			vo.setJobId(dto.getJobId());
+			vo.setTitle(dto.getJobTitle());
+			vo.setDepartment(dto.getDepartment());
+			vo.setCompanyName(dto.getCompanyName());
+			vo.setLogoUrl(dto.getLogoUrl());
+			vo.setSubmittedAt(dto.getSubmittedAt());
+			
+			// 薪资范围
+			if (dto.getMinSalary() != null && dto.getMaxSalary() != null) {
+				vo.setSalaryRange(dto.getMinSalary() + "-" + dto.getMaxSalary());
+			} else if (dto.getMinSalary() != null) {
+				vo.setSalaryRange(dto.getMinSalary() + "及以上");
+			} else {
+				vo.setSalaryRange("面议");
+			}
+			
+			// 地址
+			vo.setAddress(buildDeliveryAddress(dto, provinceMap, cityMap));
+			
+			// 工作性质
+			if (dto.getWorkNature() != null) {
+				vo.setWorkNature(dto.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招");
+			}
+			
+			// 状态（注意：状态 20 要显示为"已投递"）
+			ApplicationStatus displayStatus = dto.getStatus();
+			if (displayStatus == ApplicationStatus.CANDIDATE) {
+				displayStatus = ApplicationStatus.SUBMITTED;
+			}
+			vo.setStatus(convertDeliveryStatus(displayStatus));
+			
+			return vo;
+		}).collect(Collectors.toList());
+		
+		DeliveryListResponseVO response = new DeliveryListResponseVO();
+		response.setTotal(total);
+		response.setPage(page);
+		response.setPageSize(pageSize);
+		response.setJobs(jobList);
+		
+		return response;
+	}
+
+	/**
+	 * 构建已投递岗位的地址显示
+	 */
+	private String buildDeliveryAddress(cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryJobDTO dto, 
+	                                    Map<Integer, Province> provinceMap, 
+	                                    Map<Integer, City> cityMap) {
+		StringBuilder sb = new StringBuilder();
+		String provinceName = null;
+		String cityName = null;
+		
+		if (dto.getProvinceId() != null) {
+			Province province = provinceMap.get(dto.getProvinceId());
+			if (province != null && StringUtils.hasText(province.getName())) {
+				provinceName = province.getName();
+				sb.append(provinceName);
+			}
+		}
+		
+		if (dto.getCityId() != null) {
+			City city = cityMap.get(dto.getCityId());
+			if (city != null && StringUtils.hasText(city.getName())) {
+				cityName = city.getName();
+				boolean appendCity = true;
+				if (StringUtils.hasText(provinceName)) {
+					if (MUNICIPALITIES.contains(provinceName) && provinceName.equals(cityName)) {
+						appendCity = false;
+					}
+				}
+				if (appendCity) {
+					sb.append(cityName);
+				}
+			}
+		}
+		
+		if (sb.length() > 0) {
+			return sb.toString();
+		}
+		
+		// 如果没有省市信息，使用详细地址
+		return dto.getAddressDetail() != null ? dto.getAddressDetail() : "";
+	}
+
+	/**
+	 * 转换投递状态为显示文本
+	 * 注意：状态 20（候选人）要显示为"已投递"
+	 */
+	private String convertDeliveryStatus(ApplicationStatus status) {
+		if (status == null) {
+			return "未知";
+		}
+		
+		switch (status) {
+			case SUBMITTED:
+				return "已投递";
+			case CANDIDATE:
+				// 状态 20 在学生端显示为"已投递"
+				return "已投递";
+			case INTERVIEW:
+				return "邀请面试"; // 按照 OpenAPI 规范
+			case PASSED:
+				return "通过";
+			case REJECTED:
+				return "拒绝";
+			default:
+				return "未知";
+		}
+	}
 }
 

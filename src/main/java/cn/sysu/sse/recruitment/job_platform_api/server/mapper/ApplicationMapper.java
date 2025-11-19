@@ -49,4 +49,32 @@ public interface ApplicationMapper {
 	 * @return 投递记录，如果不存在或不属于该学生则返回Optional.empty()
 	 */
 	Optional<Application> findByIdAndStudent(@Param("id") Integer id, @Param("studentUserId") Integer studentUserId);
+	
+	/**
+	 * 查询学生已投递的岗位列表（关联Job和Company）
+	 * @param studentUserId 学生用户ID
+	 * @param jobTitle 岗位名称（模糊搜索）
+	 * @param companyName 公司名称（模糊搜索）
+	 * @param offset 偏移量
+	 * @param limit 限制数量
+	 * @return 已投递岗位列表
+	 */
+	List<cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryJobDTO> findDeliveryJobsByStudent(
+			@Param("studentUserId") Integer studentUserId,
+			@Param("jobTitle") String jobTitle,
+			@Param("companyName") String companyName,
+			@Param("offset") int offset,
+			@Param("limit") int limit);
+	
+	/**
+	 * 统计学生已投递的岗位数量
+	 * @param studentUserId 学生用户ID
+	 * @param jobTitle 岗位名称（模糊搜索）
+	 * @param companyName 公司名称（模糊搜索）
+	 * @return 总数量
+	 */
+	long countDeliveryJobsByStudent(
+			@Param("studentUserId") Integer studentUserId,
+			@Param("jobTitle") String jobTitle,
+			@Param("companyName") String companyName);
 }

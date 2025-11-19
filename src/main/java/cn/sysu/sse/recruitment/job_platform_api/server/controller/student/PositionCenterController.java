@@ -328,6 +328,42 @@ public class PositionCenterController {
 	}
 
 	/**
+	 * 获取已投递岗位列表
+	 * @param jobTitle 岗位名称（模糊搜索）
+	 * @param companyName 公司名称（模糊搜索）
+	 * @param page 页码
+	 * @param pageSize 每页大小
+	 * @param authentication 当前登录用户认证信息
+	 * @return 已投递岗位列表
+	 */
+	@GetMapping("/delivery/list")
+	public ApiResponse<DeliveryListResponseVO> getDeliveryList(
+			@RequestParam(value = "job_title", required = false) String jobTitle,
+			@RequestParam(value = "company_name", required = false) String companyName,
+			@RequestParam(value = "page", required = false, defaultValue = "1") Integer page,
+			@RequestParam(value = "page_size", required = false, defaultValue = "10") Integer pageSize,
+			Authentication authentication) {
+		logger.info("收到获取已投递岗位列表请求，岗位名称：{}，公司名称：{}，页码：{}，每页大小：{}", 
+				jobTitle, companyName, page, pageSize);
+		
+		Integer studentUserId = getStudentUserId(authentication);
+		if (studentUserId == null) {
+			return ApiResponse.error(401, "用户未登录");
+		}
+		
+		cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryListQueryDTO queryDTO = 
+				new cn.sysu.sse.recruitment.job_platform_api.pojo.dto.DeliveryListQueryDTO();
+		queryDTO.setJobTitle(jobTitle);
+		queryDTO.setCompanyName(companyName);
+		queryDTO.setPage(page);
+		queryDTO.setPageSize(pageSize);
+		
+		DeliveryListResponseVO result = positionCenterService.getDeliveryList(queryDTO, studentUserId);
+		
+		return ApiResponse.success(result);
+	}
+
+	/**
 	 * 从Authentication中获取学生用户ID
 	 * @param authentication 认证信息
 	 * @return 学生用户ID，如果未登录或不是学生则返回null
