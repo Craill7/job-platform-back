@@ -42,6 +42,9 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 	@Autowired
 	private ApplicationMapper applicationMapper;
 
+	@Autowired
+	private ApplicationStatusMapper applicationStatusMapper;
+
 	@Override
 	public StudentMeVO getStudentMe(Integer studentUserId) {
 		logger.info("获取学生信息，学生ID：{}", studentUserId);
@@ -245,7 +248,25 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 		// 构建响应VO
 		ApplicationDetailVO vo = new ApplicationDetailVO();
 		vo.setId(application.getId());
-		vo.setStatus(convertStatusToChinese(application.getStatus()));
+		
+		// 查询状态详情
+		String statusName = convertStatusToChinese(application.getStatus());
+		String statusDetail = null;
+		if (application.getStatus() != null) {
+			applicationStatusMapper.findByCode(application.getStatus().getCode())
+					.ifPresent(statusEntity -> {
+						vo.setStatus(statusEntity.getName());
+						vo.setStatusDetail(statusEntity.getDetail());
+					});
+		}
+		// 如果数据库中没有找到，使用默认值
+		if (vo.getStatus() == null) {
+			vo.setStatus(statusName);
+		}
+		if (vo.getStatusDetail() == null) {
+			vo.setStatusDetail(getDefaultStatusDetail(application.getStatus()));
+		}
+		
 		vo.setSubmittedAt(application.getSubmittedAt());
 		vo.setUpdatedAt(application.getUpdatedAt());
 		
@@ -277,7 +298,7 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 			case SUBMITTED:
 				return "已投递";
 			case CANDIDATE:
-				return "候选"; // OpenAPI文档中没有此状态，但保留处理
+				return "候选人";
 			case INTERVIEW:
 				return "面试邀请";
 			case PASSED:
@@ -286,6 +307,30 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 				return "拒绝";
 			default:
 				return "未知";
+		}
+	}
+
+	/**
+	 * 获取默认状态详情（当数据库中没有找到时使用）
+	 */
+	private String getDefaultStatusDetail(ApplicationStatus status) {
+		if (status == null) {
+			return "状态未知";
+		}
+		
+		switch (status) {
+			case SUBMITTED:
+				return "您的简历已成功投递至企业，请耐心等待企业审核，后续通知将通过平台或预留联系方式发送。";
+			case CANDIDATE:
+				return "企业已将您加入候选人名单。若后续岗位匹配，将会通过平台或联系方式继续与您沟通。";
+			case INTERVIEW:
+				return "您的简历已通过初筛，请留意平台及预留的联系方式，企业将向您发送具体的面试安排和通知。";
+			case PASSED:
+				return "恭喜您已通过本次招聘流程！企业将通过平台或您的联系方式与您进一步沟通入职相关事宜。";
+			case REJECTED:
+				return "很遗憾，您的简历未能通过本次筛选。建议您继续关注其他岗位或优化简历后再次申请，祝您求职顺利。";
+			default:
+				return "状态详情未知";
 		}
 	}
 }

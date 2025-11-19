@@ -1,5 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.pojo.vo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -19,13 +20,21 @@ public class ApplicationDetailVO {
 	private String status;
 	
 	/**
+	 * 状态详情描述
+	 */
+	@JsonProperty("status_detail")
+	private String statusDetail;
+	
+	/**
 	 * 投递时间
 	 */
+	@JsonProperty("submitted_at")
 	private LocalDateTime submittedAt;
 	
 	/**
 	 * 状态最后更新时间
 	 */
+	@JsonProperty("updated_at")
 	private LocalDateTime updatedAt;
 	
 	/**
