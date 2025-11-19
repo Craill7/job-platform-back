@@ -18,7 +18,7 @@
 
 	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application">
 		UPDATE applications
-		SET status = #{status}, updated_at = NOW()
+		SET status = #{status, jdbcType=INTEGER}, updated_at = NOW()
 		WHERE id = #{id}
 	</update>
 

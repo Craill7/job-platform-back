@@ -280,7 +280,9 @@
 	<select id="findOtherJobsByCompany" resultMap="JobMap">
 		SELECT * FROM jobs
 		WHERE company_id = #{companyId}
-		AND id != #{excludeJobId}
+		<if test="excludeJobId != null">
+			AND id != #{excludeJobId}
+		</if>
 		AND status = 20
 		ORDER BY updated_at DESC
 		LIMIT #{limit}
