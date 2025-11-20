@@ -10,6 +10,7 @@ import lombok.Data;
 public class CandidateApplicationSummaryDTO {
 	private Integer applicationId;
 	private String candidateName;
+	private String avatarUrl;
 	private Integer startYear;
 	private Integer degreeLevel;
 	private ApplicationStatus status;
