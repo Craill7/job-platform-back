@@ -12,26 +12,10 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Resume;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.*;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ApplicationMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ResumeMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
@@ -68,6 +55,10 @@ public class HrJobServiceImpl implements HrJobService {
 
     @Autowired
     private ResumeMapper resumeMapper;
+    @Autowired
+    private StudentMapper studentMapper;
+    @Autowired
+    private EducationExperienceMapper educationExperienceMapper;
 
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
             Map.entry("internship", WorkNature.INTERNHIP),
@@ -542,7 +533,7 @@ public class HrJobServiceImpl implements HrJobService {
             return null;
         }
     }
-
+    private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("yyyy-MM");
     @Override
     public HrCandidateListResponseVO listCandidatesByJob(Integer userId,
                                                          Integer jobId,
@@ -587,6 +578,89 @@ public class HrJobServiceImpl implements HrJobService {
         response.setCandidateList(candidateList);
         response.setPagination(new Pagination(totalItems, totalPages, currentPage, currentPageSize));
         return response;
+    }
+    @Override
+    public HrStudentResumeVO getStudentResume(Integer studentUserId) {
+        // 1. 查询基础信息
+        Student student = studentMapper.findByUserId(studentUserId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到该学生信息"));
+
+        // 2. 查询教育经历（取最新的一条作为主要学历）
+        List<EducationExperience> eduList = educationExperienceMapper.findByStudentUserId(studentUserId);
+        EducationExperience primaryEdu = eduList.isEmpty() ? null : eduList.get(0);
+
+        // 3. 查询个人标签
+        List<Tag> tags = tagMapper.findTagsByStudentId(studentUserId);
+
+        // 4. 组装 VO
+        HrStudentResumeVO vo = new HrStudentResumeVO();
+        vo.setAvatarUrl(student.getAvatarUrl());
+
+        // 4.1 组装 BasicInfo
+        HrStudentResumeVO.BasicInfo basicInfo = new HrStudentResumeVO.BasicInfo();
+        basicInfo.setFullName(student.getFullName());
+        basicInfo.setGender(student.getGender() != null ? (student.getGender() == 0 ? "男" : "女") : "未知");
+        // 计算年龄
+        if (student.getDateOfBirth() != null) {
+            basicInfo.setAge(Period.between(student.getDateOfBirth(), LocalDate.now()).getYears());
+        }
+        // 从教育经历中获取学历，放入 BasicInfo
+        if (primaryEdu != null) {
+            basicInfo.setDegree(convertDegree(primaryEdu.getDegreeLevel()));
+        } else {
+            basicInfo.setDegree("未填写");
+        }
+        vo.setBasicInfo(basicInfo);
+
+        // 4.2 组装 PrimaryEducation
+        if (primaryEdu != null) {
+            HrStudentResumeVO.PrimaryEducation eduVo = new HrStudentResumeVO.PrimaryEducation();
+            eduVo.setSchoolName(primaryEdu.getSchoolName());
+            eduVo.setMajor(primaryEdu.getMajor());
+            eduVo.setMajorRank(primaryEdu.getMajorRank());
+            eduVo.setDegreeLevel(convertDegree(primaryEdu.getDegreeLevel()));
+            // 格式化日期为 YYYY-MM-DD
+            eduVo.setStartDate(primaryEdu.getStartDate() != null ? primaryEdu.getStartDate().format(MONTH_FMT) : "");
+            eduVo.setEndDate(primaryEdu.getEndDate() != null ? primaryEdu.getEndDate().format(MONTH_FMT) : "");
+
+            vo.setPrimaryEducation(eduVo);
+        }
+
+        // 4.3 组装 ExpectedJob
+        HrStudentResumeVO.ExpectedJob jobVo = new HrStudentResumeVO.ExpectedJob();
+        jobVo.setExpectedPosition(student.getExpectedPosition());
+        // 拼接期望薪资字符串
+        jobVo.setExpectedSalary(formatSalary(student.getExpectedMinSalary(), student.getExpectedMaxSalary()));
+        vo.setExpectedJob(jobVo);
+
+        // 4.4 组装 PersonalTags
+        List<HrStudentResumeVO.PersonalTag> tagVos = tags.stream().map(t -> {
+            HrStudentResumeVO.PersonalTag tagVo = new HrStudentResumeVO.PersonalTag();
+            tagVo.setTagId(t.getId());
+            tagVo.setName(t.getName());
+            return tagVo;
+        }).collect(Collectors.toList());
+        vo.setPersonalTags(tagVos);
+
+        return vo;
+    }
+
+    // 辅助方法：转换学历
+    private String convertDegree(Integer degreeLevel) {
+        if (degreeLevel == null) return "";
+        return switch (degreeLevel) {
+            case 0 -> "本科";
+            case 1 -> "硕士";
+            case 2 -> "博士";
+            default -> "其他";
+        };
+    }
+
+    // 辅助方法：格式化薪资
+    private String formatSalary(Integer min, Integer max) {
+        if (min == null) return "面议";
+        if (max == null) return min + "及以上"; // 假设单位是元，如果是k需要乘1000，根据数据库实际存储调整
+        return min + "-" + max;
     }
 
     private HrCandidateListResponseVO.CandidateSummaryVO convertCandidateSummary(CandidateApplicationSummaryDTO dto) {
@@ -854,5 +928,6 @@ public class HrJobServiceImpl implements HrJobService {
         Integer getMaxSalary() {
             return maxSalary;
         }
+
     }
 }

@@ -5,14 +5,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrApplicationStatusUpda
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -202,5 +195,19 @@ public class HrJobController {
             logger.warn("解析用户ID失败", ex);
             return null;
         }
+    }
+
+    @GetMapping("/resume/{studentUserId}")
+
+    public ApiResponse<HrStudentResumeVO> getStudentResume(
+            @PathVariable("studentUserId") Integer studentUserId,
+            Authentication authentication) {
+
+        // 记录日志：哪个HR看了哪个学生的简历
+        String hrId = authentication.getName();
+        logger.info("HR用户[ID={}] 查看了学生[ID={}] 的简历预览", hrId, studentUserId);
+
+        HrStudentResumeVO vo = hrJobService.getStudentResume(studentUserId);
+        return ApiResponse.success(vo);
     }
 }
