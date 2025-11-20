@@ -40,7 +40,7 @@ public class HrStudentResumeVO {
         private String fullName;
         private String gender; // "男"/"女"
         private Integer age;   // 根据生日计算
-        private String degree;
+        private String degreeLevel;
     }
 
     @Data

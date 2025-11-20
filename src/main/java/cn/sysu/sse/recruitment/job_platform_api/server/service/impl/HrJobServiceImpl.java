@@ -606,9 +606,9 @@ public class HrJobServiceImpl implements HrJobService {
         }
         // 从教育经历中获取学历，放入 BasicInfo
         if (primaryEdu != null) {
-            basicInfo.setDegree(convertDegree(primaryEdu.getDegreeLevel()));
+            basicInfo.setDegreeLevel(convertDegree(primaryEdu.getDegreeLevel()));
         } else {
-            basicInfo.setDegree("未填写");
+            basicInfo.setDegreeLevel("未填写");
         }
         vo.setBasicInfo(basicInfo);
 
