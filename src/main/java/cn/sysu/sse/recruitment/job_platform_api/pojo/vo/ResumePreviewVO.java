@@ -2,12 +2,11 @@ package cn.sysu.sse.recruitment.job_platform_api.pojo.vo;
 
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.List;
 
 
 @Data
-public class HrStudentResumeVO {
+public class ResumePreviewVO {
     /**
      * 头像链接
      */

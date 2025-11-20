@@ -55,10 +55,8 @@ public class HrJobServiceImpl implements HrJobService {
 
     @Autowired
     private ResumeMapper resumeMapper;
-    @Autowired
-    private StudentMapper studentMapper;
-    @Autowired
-    private EducationExperienceMapper educationExperienceMapper;
+
+
 
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
             Map.entry("internship", WorkNature.INTERNHIP),
@@ -579,71 +577,7 @@ public class HrJobServiceImpl implements HrJobService {
         response.setPagination(new Pagination(totalItems, totalPages, currentPage, currentPageSize));
         return response;
     }
-    @Override
-    public HrStudentResumeVO getStudentResume(Integer studentUserId) {
-        // 1. 查询基础信息
-        Student student = studentMapper.findByUserId(studentUserId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到该学生信息"));
 
-        // 2. 查询教育经历（取最新的一条作为主要学历）
-        List<EducationExperience> eduList = educationExperienceMapper.findByStudentUserId(studentUserId);
-        EducationExperience primaryEdu = eduList.isEmpty() ? null : eduList.get(0);
-
-        // 3. 查询个人标签
-        List<Tag> tags = tagMapper.findTagsByStudentId(studentUserId);
-
-        // 4. 组装 VO
-        HrStudentResumeVO vo = new HrStudentResumeVO();
-        vo.setAvatarUrl(student.getAvatarUrl());
-
-        // 4.1 组装 BasicInfo
-        HrStudentResumeVO.BasicInfo basicInfo = new HrStudentResumeVO.BasicInfo();
-        basicInfo.setFullName(student.getFullName());
-        basicInfo.setGender(student.getGender() != null ? (student.getGender() == 0 ? "男" : "女") : "未知");
-        // 计算年龄
-        if (student.getDateOfBirth() != null) {
-            basicInfo.setAge(Period.between(student.getDateOfBirth(), LocalDate.now()).getYears());
-        }
-        // 从教育经历中获取学历，放入 BasicInfo
-        if (primaryEdu != null) {
-            basicInfo.setDegreeLevel(convertDegree(primaryEdu.getDegreeLevel()));
-        } else {
-            basicInfo.setDegreeLevel("未填写");
-        }
-        vo.setBasicInfo(basicInfo);
-
-        // 4.2 组装 PrimaryEducation
-        if (primaryEdu != null) {
-            HrStudentResumeVO.PrimaryEducation eduVo = new HrStudentResumeVO.PrimaryEducation();
-            eduVo.setSchoolName(primaryEdu.getSchoolName());
-            eduVo.setMajor(primaryEdu.getMajor());
-            eduVo.setMajorRank(primaryEdu.getMajorRank());
-            eduVo.setDegreeLevel(convertDegree(primaryEdu.getDegreeLevel()));
-            // 格式化日期为 YYYY-MM-DD
-            eduVo.setStartDate(primaryEdu.getStartDate() != null ? primaryEdu.getStartDate().format(MONTH_FMT) : "");
-            eduVo.setEndDate(primaryEdu.getEndDate() != null ? primaryEdu.getEndDate().format(MONTH_FMT) : "");
-
-            vo.setPrimaryEducation(eduVo);
-        }
-
-        // 4.3 组装 ExpectedJob
-        HrStudentResumeVO.ExpectedJob jobVo = new HrStudentResumeVO.ExpectedJob();
-        jobVo.setExpectedPosition(student.getExpectedPosition());
-        // 拼接期望薪资字符串
-        jobVo.setExpectedSalary(formatSalary(student.getExpectedMinSalary(), student.getExpectedMaxSalary()));
-        vo.setExpectedJob(jobVo);
-
-        // 4.4 组装 PersonalTags
-        List<HrStudentResumeVO.PersonalTag> tagVos = tags.stream().map(t -> {
-            HrStudentResumeVO.PersonalTag tagVo = new HrStudentResumeVO.PersonalTag();
-            tagVo.setTagId(t.getId());
-            tagVo.setName(t.getName());
-            return tagVo;
-        }).collect(Collectors.toList());
-        vo.setPersonalTags(tagVos);
-
-        return vo;
-    }
 
     // 辅助方法：转换学历
     private String convertDegree(Integer degreeLevel) {

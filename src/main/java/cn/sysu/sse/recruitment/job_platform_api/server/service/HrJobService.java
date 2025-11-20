@@ -70,10 +70,5 @@ public interface HrJobService {
 	 */
 	HrApplicationStatusResponseVO updateApplicationStatus(Integer userId, Integer applicationId, HrApplicationStatusUpdateDTO dto);
 
-	/**
-	 * 获取学生简历预览数据
-	 * @param studentUserId 学生用户ID
-	 * @return 聚合后的简历VO
-	 */
-	HrStudentResumeVO getStudentResume(Integer studentUserId);
+
 }

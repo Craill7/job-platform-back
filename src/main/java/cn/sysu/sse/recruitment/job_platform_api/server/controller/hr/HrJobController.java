@@ -7,10 +7,12 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
+import cn.sysu.sse.recruitment.job_platform_api.server.service.ResumePreviewService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -197,17 +199,18 @@ public class HrJobController {
         }
     }
 
+    @Autowired
+    private ResumePreviewService resumePreviewService; // 注入通用 Service
+
+    /**
+     * HR 查看候选人简历预览
+     */
     @GetMapping("/resume/{studentUserId}")
+    @PreAuthorize("hasRole('HR')") // 权限控制
+    public ApiResponse<ResumePreviewVO> getCandidateResume(
+            @PathVariable("studentUserId") Integer studentUserId) {
 
-    public ApiResponse<HrStudentResumeVO> getStudentResume(
-            @PathVariable("studentUserId") Integer studentUserId,
-            Authentication authentication) {
-
-        // 记录日志：哪个HR看了哪个学生的简历
-        String hrId = authentication.getName();
-        logger.info("HR用户[ID={}] 查看了学生[ID={}] 的简历预览", hrId, studentUserId);
-
-        HrStudentResumeVO vo = hrJobService.getStudentResume(studentUserId);
-        return ApiResponse.success(vo);
+        // 调用通用 Service，传入路径参数中的 ID
+        return ApiResponse.success(resumePreviewService.getStudentResume(studentUserId));
     }
 }
