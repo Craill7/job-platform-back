@@ -64,6 +64,9 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 	@Autowired
 	private JobViewMapper jobViewMapper;
 
+	@Autowired
+	private CompanyExternalLinkMapper companyExternalLinkMapper;
+
 	@Override
 	public JobListResponseVO getJobList(JobListQueryDTO queryDTO, Integer studentUserId) {
 		logger.info("获取岗位列表，查询参数：{}，学生ID：{}", queryDTO, studentUserId);
@@ -354,6 +357,32 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 				companyInfo.setCompanyNature(dict.getNatureName());
 				companyInfo.setCompanyScale(dict.getCompanyScale());
 			});
+
+			// 查询企业所有外部链接
+			List<CompanyExternalLink> externalLinks = companyExternalLinkMapper.listByCompanyId(company.getCompanyId());
+			
+			// 查找企业官网链接（用于向后兼容）
+			Optional<CompanyExternalLink> websiteLink = externalLinks.stream()
+					.filter(link -> {
+						String linkName = link.getLinkName();
+						return "企业官网".equals(linkName) 
+								|| "官网".equals(linkName) 
+								|| "website".equalsIgnoreCase(linkName)
+								|| "企业网站".equals(linkName);
+					})
+					.findFirst();
+			companyInfo.setCompanyWebsiteUrl(websiteLink.map(CompanyExternalLink::getLinkUrl).orElse(null));
+			
+			// 转换所有外部链接为VO
+			List<JobDetailVO.CompanyLinkVO> linkVOList = externalLinks.stream()
+					.map(link -> {
+						JobDetailVO.CompanyLinkVO linkVO = new JobDetailVO.CompanyLinkVO();
+						linkVO.setLinkName(link.getLinkName());
+						linkVO.setLinkUrl(link.getLinkUrl());
+						return linkVO;
+					})
+					.collect(Collectors.toList());
+			companyInfo.setCompanyLinks(linkVOList);
 			
 			vo.setCompanyInfo(companyInfo);
 		}

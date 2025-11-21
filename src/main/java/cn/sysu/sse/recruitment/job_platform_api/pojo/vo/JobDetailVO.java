@@ -85,5 +85,17 @@ public class JobDetailVO {
 
 		@JsonProperty("company_website_url")
 		private String companyWebsiteUrl;
+
+		@JsonProperty("company_links")
+		private List<CompanyLinkVO> companyLinks;
+	}
+
+	@Data
+	public static class CompanyLinkVO {
+		@JsonProperty("link_name")
+		private String linkName;
+
+		@JsonProperty("link_url")
+		private String linkUrl;
 	}
 }
