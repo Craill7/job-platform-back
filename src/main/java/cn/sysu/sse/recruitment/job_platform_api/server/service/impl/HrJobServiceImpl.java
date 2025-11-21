@@ -601,6 +601,7 @@ public class HrJobServiceImpl implements HrJobService {
         HrCandidateListResponseVO.CandidateSummaryVO vo = new HrCandidateListResponseVO.CandidateSummaryVO();
         vo.setApplicationId(dto.getApplicationId());
         vo.setCandidateName(dto.getCandidateName());
+        vo.setAvatarUrl(dto.getAvatarUrl());
         vo.setGrade(buildGrade(dto.getStartYear()));
         vo.setDegree(mapDegree(dto.getDegreeLevel()));
         vo.setResumeStatus(mapStatusToDisplay(dto.getStatus()));

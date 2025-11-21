@@ -1,4 +1,4 @@
-package cn.sysu.sse.recruitment.job_platform_api.server.controller.hr;
+package cn.sysu.sse.recruitment.job_platform_api.server.controller.company;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrApplicationStatusUpdateDTO;
