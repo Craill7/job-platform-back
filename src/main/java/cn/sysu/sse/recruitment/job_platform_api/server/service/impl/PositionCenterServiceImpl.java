@@ -331,18 +331,6 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 				companyInfo.setCompanyNature(dict.getNatureName());
 				companyInfo.setCompanyScale(dict.getCompanyScale());
 			});
-
-			// 查询同公司其他岗位
-			List<Job> otherJobs = jobMapper.findOtherJobsByCompany(company.getCompanyId(), jobId, 1);
-			List<JobDetailVO.OtherJobVO> otherJobList = otherJobs.stream()
-					.limit(1)
-					.map(otherJob -> {
-				JobDetailVO.OtherJobVO otherJobVO = new JobDetailVO.OtherJobVO();
-				otherJobVO.setJobId(otherJob.getId());
-				otherJobVO.setTitle(otherJob.getTitle());
-				return otherJobVO;
-			}).collect(Collectors.toList());
-			companyInfo.setOtherJobs(otherJobList);
 			
 			vo.setCompanyInfo(companyInfo);
 		}

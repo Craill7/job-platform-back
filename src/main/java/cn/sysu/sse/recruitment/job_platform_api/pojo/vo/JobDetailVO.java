@@ -82,16 +82,5 @@ public class JobDetailVO {
 
 		@JsonProperty("company_website_url")
 		private String companyWebsiteUrl;
-
-		@JsonProperty("other_jobs")
-		private List<OtherJobVO> otherJobs;
-	}
-
-	@Data
-	public static class OtherJobVO {
-		@JsonProperty("job_id")
-		private Integer jobId;
-
-		private String title;
 	}
 }
