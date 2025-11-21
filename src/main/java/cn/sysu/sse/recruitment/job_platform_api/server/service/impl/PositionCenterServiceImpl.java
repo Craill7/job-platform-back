@@ -289,7 +289,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		vo.setTimes(Math.toIntExact(jobViewMapper.countByJob(jobId)));
 		vo.setPostedAt(job.getCreatedAt() != null ? job.getCreatedAt().toLocalDate() : null);
 		vo.setPositionDescription(job.getDescription());
-		vo.setPositionRequirements(job.getDescription()); // 这里可以根据实际需求调整
+		vo.setPositionRequirements(job.getTechRequirements());
 		
 		// 解析加分项
 		if (StringUtils.hasText(job.getBonusPoints())) {
