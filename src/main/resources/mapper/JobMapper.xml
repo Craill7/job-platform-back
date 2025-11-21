@@ -165,13 +165,15 @@
 			<if test="criteria.cityId != null">
 				AND j.city_id = #{criteria.cityId}
 			</if>
-			<if test="criteria.province != null and criteria.province != ''">
+			<!-- 只有在没有provinceId时才使用province名称进行模糊匹配 -->
+			<if test="criteria.province != null and criteria.province != '' and criteria.provinceId == null">
 				AND (
 					j.address_detail LIKE CONCAT('%', #{criteria.province}, '%')
 					OR c.company_address LIKE CONCAT('%', #{criteria.province}, '%')
 				)
 			</if>
-			<if test="criteria.city != null and criteria.city != ''">
+			<!-- 只有在没有cityId时才使用city名称进行模糊匹配 -->
+			<if test="criteria.city != null and criteria.city != '' and criteria.cityId == null">
 				AND (
 					j.address_detail LIKE CONCAT('%', #{criteria.city}, '%')
 					OR c.company_address LIKE CONCAT('%', #{criteria.city}, '%')
@@ -226,13 +228,15 @@
 			<if test="criteria.cityId != null">
 				AND j.city_id = #{criteria.cityId}
 			</if>
-			<if test="criteria.province != null and criteria.province != ''">
+			<!-- 只有在没有provinceId时才使用province名称进行模糊匹配 -->
+			<if test="criteria.province != null and criteria.province != '' and criteria.provinceId == null">
 				AND (
 					j.address_detail LIKE CONCAT('%', #{criteria.province}, '%')
 					OR c.company_address LIKE CONCAT('%', #{criteria.province}, '%')
 				)
 			</if>
-			<if test="criteria.city != null and criteria.city != ''">
+			<!-- 只有在没有cityId时才使用city名称进行模糊匹配 -->
+			<if test="criteria.city != null and criteria.city != '' and criteria.cityId == null">
 				AND (
 					j.address_detail LIKE CONCAT('%', #{criteria.city}, '%')
 					OR c.company_address LIKE CONCAT('%', #{criteria.city}, '%')

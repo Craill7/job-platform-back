@@ -9,5 +9,7 @@ import java.util.List;
 @Mapper
 public interface JobCategoryMapper {
 	List<JobCategory> findByIds(@Param("ids") List<Integer> ids);
+	
+	JobCategory findByName(@Param("name") String name);
 }
 

@@ -9,5 +9,12 @@
 			#{id}
 		</foreach>
 	</select>
+	
+	<select id="findByName" resultType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.JobCategory">
+		SELECT id, name
+		FROM t_job_categories
+		WHERE name = #{name}
+		LIMIT 1
+	</select>
 </mapper>
 

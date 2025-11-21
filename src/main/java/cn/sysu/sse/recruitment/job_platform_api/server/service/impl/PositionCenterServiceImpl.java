@@ -92,6 +92,28 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			}
 		}
 		
+		// 处理岗位类别：将类别名称转换为ID
+		if (StringUtils.hasText(queryDTO.getType())) {
+			String typeParam = queryDTO.getType().trim();
+			// 先尝试解析为数字ID
+			try {
+				Integer typeId = Integer.parseInt(typeParam);
+				// 如果是数字，直接使用（MyBatis会自动转换）
+				queryDTO.setType(String.valueOf(typeId));
+			} catch (NumberFormatException e) {
+				// 如果不是数字，按类别名称查找
+				JobCategory category = jobCategoryMapper.findByName(typeParam);
+				if (category != null) {
+					// 将类别名称替换为ID，以便后续查询使用
+					queryDTO.setType(String.valueOf(category.getId()));
+				} else {
+					// 如果找不到对应的类别，清空type参数，避免查询错误
+					logger.warn("未找到类别名称：{}", typeParam);
+					queryDTO.setType(null);
+				}
+			}
+		}
+		
 		// 根据名称解析省市ID
 		resolveLocationFilters(queryDTO);
 
@@ -513,16 +535,25 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			return;
 		}
 
+		// 处理省份：如果提供了省份名称，尝试转换为ID
 		if (queryDTO.getProvinceId() == null && StringUtils.hasText(queryDTO.getProvince())) {
 			locationMapper.findProvinceByKeyword(queryDTO.getProvince().trim())
-					.ifPresent(province -> queryDTO.setProvinceId(province.getId()));
+					.ifPresent(province -> {
+						queryDTO.setProvinceId(province.getId());
+						// 成功解析出ID后，清空名称字段，避免SQL查询时重复条件
+						queryDTO.setProvince(null);
+					});
 		}
 
+		// 处理城市：如果提供了城市名称，尝试转换为ID
 		if (StringUtils.hasText(queryDTO.getCity()) && queryDTO.getCityId() == null) {
 			Integer provinceId = queryDTO.getProvinceId();
 			locationMapper.findCityByKeyword(queryDTO.getCity().trim(), provinceId)
 					.ifPresent(city -> {
 						queryDTO.setCityId(city.getId());
+						// 成功解析出ID后，清空名称字段，避免SQL查询时重复条件
+						queryDTO.setCity(null);
+						// 如果省份ID为空，从城市信息中获取
 						if (queryDTO.getProvinceId() == null) {
 							queryDTO.setProvinceId(city.getProvinceId());
 						}
