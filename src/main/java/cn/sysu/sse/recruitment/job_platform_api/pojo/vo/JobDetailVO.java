@@ -59,6 +59,9 @@ public class JobDetailVO {
 
 	@Data
 	public static class CompanyInfoVO {
+		@JsonProperty("company_id")
+		private Integer companyId;
+
 		@JsonProperty("company_logo_url")
 		private String companyLogoUrl;
 

@@ -320,6 +320,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		if (companyOpt.isPresent()) {
 			Company company = companyOpt.get();
 			JobDetailVO.CompanyInfoVO companyInfo = new JobDetailVO.CompanyInfoVO();
+			companyInfo.setCompanyId(company.getCompanyId());
 			companyInfo.setCompanyLogoUrl(company.getLogoUrl());
 			companyInfo.setCompanyName(company.getCompanyName());
 			companyInfo.setContactPersonName(company.getContactPersonName());
