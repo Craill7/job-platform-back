@@ -25,15 +25,30 @@ public class FileStorageConfig implements WebMvcConfigurer {
 	@Value("${app.storage.company-logo-url-prefix}")
 	private String logoUrlPrefix;
 
+	@Value("${app.storage.student-avatar-dir}")
+	private String avatarDir;
+
+	@Value("${app.storage.student-avatar-url-prefix}")
+	private String avatarUrlPrefix;
+
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		if (!StringUtils.hasText(logoDir) || !StringUtils.hasText(logoUrlPrefix)) {
-			logger.warn("未配置公司Logo静态资源路径，跳过资源映射");
+		// 映射企业 Logo
+		registerPath(registry, logoUrlPrefix, logoDir, "企业Logo");
+
+		// 映射学生头像
+		registerPath(registry, avatarUrlPrefix, avatarDir, "学生头像");
+	}
+
+	// 提取公共方法
+	private void registerPath(ResourceHandlerRegistry registry, String urlPrefix, String dirPath, String name) {
+		if (!StringUtils.hasText(dirPath) || !StringUtils.hasText(urlPrefix)) {
+			logger.warn("未配置{}静态资源路径，跳过资源映射", name);
 			return;
 		}
 
-		Path dir = Paths.get(logoDir).toAbsolutePath().normalize();
-		String handler = logoUrlPrefix.endsWith("/") ? logoUrlPrefix + "**" : logoUrlPrefix + "/**";
+		Path dir = Paths.get(dirPath).toAbsolutePath().normalize();
+		String handler = urlPrefix.endsWith("/") ? urlPrefix + "**" : urlPrefix + "/**";
 		if (!handler.startsWith("/")) {
 			handler = "/" + handler;
 		}
@@ -43,8 +58,7 @@ public class FileStorageConfig implements WebMvcConfigurer {
 			location = location + "/";
 		}
 
-		registry.addResourceHandler(handler)
-				.addResourceLocations(location);
-		logger.info("已映射公司Logo静态资源：{} -> {}", handler, location);
+		registry.addResourceHandler(handler).addResourceLocations(location);
+		logger.info("已映射{}静态资源：{} -> {}", name, handler, location);
 	}
 }
