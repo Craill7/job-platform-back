@@ -2,9 +2,11 @@ package cn.sysu.sse.recruitment.job_platform_api.server.controller.student;
 
 import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.ChangePasswordVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.ResumePreviewVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.StudentResumePreviewVO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.StudentWelcomeCardVO;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.AuthService;
+import cn.sysu.sse.recruitment.job_platform_api.server.service.ResumePreviewService;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.StudentCenterService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,14 +45,19 @@ public class StudentCenterController {
     /**
      * 获取学生简历预览
      */
-    @GetMapping("/resume-preview")
-    public ApiResponse<StudentResumePreviewVO> getResumePreview(Authentication authentication) {
+    @Autowired
+    private ResumePreviewService resumePreviewService; // 注入通用 Service
+
+    /**
+     * 学生查看自己的简历预览（复用界面）
+     */
+    @GetMapping("/resume-preview") // 路径保持不变
+    public ApiResponse<ResumePreviewVO> getMyResumePreview(Authentication authentication) {
         Integer userId = getUserId(authentication);
         if (userId == null) return ApiResponse.error(401, "未登录");
 
-        logger.info("获取简历预览信息，userId={}", userId);
-        StudentResumePreviewVO vo = studentCenterService.getResumePreview(userId);
-        return ApiResponse.success(vo);
+        // 直接调用通用 Service，传入自己的 ID
+        return ApiResponse.success(resumePreviewService.getStudentResume(userId));
     }
 
     /**

@@ -88,6 +88,7 @@
 		SELECT
 			a.id AS applicationId,
 			s.full_name AS candidateName,
+			s.avatar_url AS avatarUrl,
 			MIN(YEAR(edu.start_date)) AS startYear,
 			MAX(edu.degree_level) AS degreeLevel,
 			a.status

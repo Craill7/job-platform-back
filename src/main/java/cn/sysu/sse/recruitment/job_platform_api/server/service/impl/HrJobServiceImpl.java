@@ -12,26 +12,10 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobCreateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.JobWithStatsDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Application;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Company;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Resume;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Tag;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationResumeDetailVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrApplicationStatusResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrCandidateListResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobCreateResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobDetailVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobListResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobStatusResponseVO;
-import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.HrJobUpdateResponseVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.*;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
+import cn.sysu.sse.recruitment.job_platform_api.server.mapper.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.CompanyMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ApplicationMapper;
-import cn.sysu.sse.recruitment.job_platform_api.server.mapper.ResumeMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
@@ -68,6 +55,8 @@ public class HrJobServiceImpl implements HrJobService {
 
     @Autowired
     private ResumeMapper resumeMapper;
+
+
 
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
             Map.entry("internship", WorkNature.INTERNHIP),
@@ -542,7 +531,7 @@ public class HrJobServiceImpl implements HrJobService {
             return null;
         }
     }
-
+    private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("yyyy-MM");
     @Override
     public HrCandidateListResponseVO listCandidatesByJob(Integer userId,
                                                          Integer jobId,
@@ -589,10 +578,30 @@ public class HrJobServiceImpl implements HrJobService {
         return response;
     }
 
+
+    // 辅助方法：转换学历
+    private String convertDegree(Integer degreeLevel) {
+        if (degreeLevel == null) return "";
+        return switch (degreeLevel) {
+            case 0 -> "本科";
+            case 1 -> "硕士";
+            case 2 -> "博士";
+            default -> "其他";
+        };
+    }
+
+    // 辅助方法：格式化薪资
+    private String formatSalary(Integer min, Integer max) {
+        if (min == null) return "面议";
+        if (max == null) return min + "及以上"; // 假设单位是元，如果是k需要乘1000，根据数据库实际存储调整
+        return min + "-" + max;
+    }
+
     private HrCandidateListResponseVO.CandidateSummaryVO convertCandidateSummary(CandidateApplicationSummaryDTO dto) {
         HrCandidateListResponseVO.CandidateSummaryVO vo = new HrCandidateListResponseVO.CandidateSummaryVO();
         vo.setApplicationId(dto.getApplicationId());
         vo.setCandidateName(dto.getCandidateName());
+        vo.setAvatarUrl(dto.getAvatarUrl());
         vo.setGrade(buildGrade(dto.getStartYear()));
         vo.setDegree(mapDegree(dto.getDegreeLevel()));
         vo.setResumeStatus(mapStatusToDisplay(dto.getStatus()));
@@ -854,5 +863,6 @@ public class HrJobServiceImpl implements HrJobService {
         Integer getMaxSalary() {
             return maxSalary;
         }
+
     }
 }

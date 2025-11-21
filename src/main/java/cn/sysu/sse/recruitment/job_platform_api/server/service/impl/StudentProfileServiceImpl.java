@@ -13,16 +13,28 @@ import cn.sysu.sse.recruitment.job_platform_api.server.mapper.StudentMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.TagMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.UserMapper;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.StudentProfileService;
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.geometry.Positions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +44,12 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("yyyy-MM");
 
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024L; // 5MB
+    private static final int TARGET_SIZE = 512; // 头像目标尺寸 512x512
+    private static final double OUTPUT_QUALITY = 0.8d; // 压缩质量
+
+
+
     @Autowired
     private StudentMapper studentMapper;
     @Autowired
@@ -40,6 +58,12 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     private EducationExperienceMapper educationExperienceMapper;
     @Autowired
     private TagMapper tagMapper;
+
+    @Value("${app.storage.student-avatar-dir}")
+    private String avatarDir;
+
+    @Value("${app.storage.student-avatar-url-prefix}")
+    private String avatarUrlPrefix;
 
     @Override
     public StudentProfileVO getMyProfile(Integer userId) {
@@ -183,21 +207,111 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
 
     @Override
+    @Transactional
     public String uploadAvatar(Integer userId, MultipartFile file) {
-        // 模拟上传，实际应接入 OSS/MinIO
-        String mockUrl = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + userId;
+        logger.info("上传学生头像，userId={}，文件名={}", userId, file != null ? file.getOriginalFilename() : "null");
+
+        // 基础校验
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "文件不能为空");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "文件大小不能超过5MB");
+        }
+
+        // 读取并校验图片格式
+        byte[] originalBytes;
+        try {
+            originalBytes = file.getBytes();
+        } catch (IOException e) {
+            logger.error("读取文件失败", e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "读取文件失败");
+        }
+
+        if (detectImageType(originalBytes) == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "仅支持 JPEG/PNG/WebP 图片格式");
+        }
+
+        // 处理图片 (裁剪为正方形并压缩)
+        // 尝试使用WebP格式输出以节省空间，如果不支持则回退到JPG
+        String outputFormat = supportsWebp() ? "webp" : "jpg";
+        byte[] processedBytes = processImage(originalBytes, outputFormat);
+
+        // 保存文件
+        String filename = buildFilename(outputFormat);
+        saveFile(processedBytes, filename);
+
+        // 生成 URL 并更新数据库
+        String url = buildAccessibleUrl(filename);
+
         Student student = studentMapper.findByUserId(userId).orElse(new Student());
         student.setUserId(userId);
-        student.setAvatarUrl(mockUrl);
+        student.setAvatarUrl(url);
 
         if (studentMapper.findByUserId(userId).isPresent()) {
             studentMapper.update(student);
         } else {
             studentMapper.insert(student);
         }
-        return mockUrl;
+
+        logger.info("学生头像上传成功，userId={}，url={}", userId, url);
+        return url;
+    }
+    // 图片处理辅助方法 (复用自 CompanyLogoServiceImpl) ---
+    private byte[] processImage(byte[] source, String outputFormat) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            // 自动裁剪为正方形中心区域
+            Thumbnails.of(new ByteArrayInputStream(source))
+                    .size(TARGET_SIZE, TARGET_SIZE)
+                    .crop(Positions.CENTER)
+                    .outputQuality(OUTPUT_QUALITY)
+                    .outputFormat(outputFormat)
+                    .toOutputStream(outputStream);
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            logger.error("处理图片失败", e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "图片处理失败，请检查文件是否损坏");
+        }
     }
 
+    private void saveFile(byte[] bytes, String filename) {
+        try {
+            Path dir = Paths.get(avatarDir).toAbsolutePath().normalize();
+            Files.createDirectories(dir); // 自动创建目录
+            Path filePath = dir.resolve(filename);
+            Files.write(filePath, bytes);
+        } catch (IOException e) {
+            logger.error("保存头像文件失败", e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "存储图片失败");
+        }
+    }
+
+    private String buildFilename(String extension) {
+        // 使用 UUID 生成随机文件名，避免中文乱码和冲突
+        String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+        return uuid + "." + extension.toLowerCase(Locale.ROOT);
+    }
+
+    private String buildAccessibleUrl(String filename) {
+        String prefix = avatarUrlPrefix.endsWith("/") ? avatarUrlPrefix : avatarUrlPrefix + "/";
+        return prefix + filename;
+    }
+
+    // 简单的魔数检查
+    private String detectImageType(byte[] data) {
+        if (data.length < 12) return null;
+        if ((data[0] & 0xFF) == 0xFF && (data[1] & 0xFF) == 0xD8) return "jpg";
+        if ((data[0] & 0xFF) == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47) return "png";
+        if (data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F' && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P') return "webp";
+        return null;
+    }
+
+    private boolean supportsWebp() {
+        return ImageIO.getImageWritersByFormatName("webp").hasNext();
+    }
     // --- 辅助转换方法 ---
 
     private String mapJobStatusToString(Integer status) {

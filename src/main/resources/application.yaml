@@ -54,6 +54,9 @@ app:
     company-logo-dir: ${COMPANY_LOGO_DIR:uploads/company-logo}
     company-logo-url-prefix: ${COMPANY_LOGO_URL_PREFIX:/files/company-logo}
 
+    student-avatar-dir: ${STUDENT_AVATAR_DIR:uploads/student-avatar}
+    student-avatar-url-prefix: ${STUDENT_AVATAR_URL_PREFIX:/files/student-avatar}
+
 ---
 spring:
   config:
