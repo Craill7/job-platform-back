@@ -266,62 +266,28 @@ public class PositionCenterController {
 
 	/**
 	 * 上传PDF简历（求职中心）
-	 * 接收JSON请求体，包含base64编码的文件内容
-	 * @param dto 上传请求DTO，包含file（base64字符串）、usage、template_id
+	 * 支持multipart/form-data上传（根据OpenAPI定义）
+	 * @param file 上传的PDF文件
 	 * @param authentication 当前登录用户认证信息
 	 * @return 上传结果
 	 */
 	@PostMapping("/resume_files/upload")
 	public ApiResponse<ResumeFileVO> uploadResume(
-			@Valid @RequestBody UploadResumeFileDTO dto,
+			@RequestParam("file") MultipartFile file,
 			Authentication authentication) {
-		logger.info("收到上传简历请求，用途：{}，模板ID：{}", dto.getUsage(), dto.getTemplateId());
+		logger.info("收到上传简历请求，文件名：{}", file != null ? file.getOriginalFilename() : "null");
 		
 		Integer studentUserId = getStudentUserId(authentication);
 		if (studentUserId == null) {
 			return ApiResponse.error(401, "用户未登录");
 		}
 		
-		// 解析base64字符串
-		MultipartFile file;
-		try {
-			// 处理base64字符串（可能包含data:application/pdf;base64,前缀）
-			String base64Content = dto.getFile();
-			if (base64Content == null || base64Content.trim().isEmpty()) {
-				throw new BusinessException(ErrorCode.BAD_REQUEST, "文件内容不能为空");
-			}
-			
-			// 移除data URL前缀（如果存在）
-			if (base64Content.contains(",")) {
-				base64Content = base64Content.substring(base64Content.indexOf(",") + 1);
-			}
-			
-			// 清理所有空白字符（空格、换行符、制表符等）
-			base64Content = base64Content.replaceAll("\\s+", "");
-			
-			byte[] fileBytes = Base64.getDecoder().decode(base64Content);
-			if (fileBytes.length == 0) {
-				throw new BusinessException(ErrorCode.BAD_REQUEST, "文件内容为空");
-			}
-			
-			String fileName = "resume.pdf"; // 默认文件名，实际应该从请求中获取或根据时间生成
-			file = new Base64MultipartFile(fileBytes, "file", fileName, "application/pdf");
-		} catch (IllegalArgumentException e) {
-			logger.error("base64解码失败", e);
-			throw new BusinessException(ErrorCode.BAD_REQUEST, "文件格式错误，base64解码失败：" + e.getMessage());
-		} catch (BusinessException e) {
-			throw e;
-		} catch (Exception e) {
-			logger.error("处理文件失败", e);
-			throw new BusinessException(ErrorCode.BAD_REQUEST, "文件处理失败：" + e.getMessage());
-		}
-		
 		// 调用简历中心服务上传文件
 		ResumeFileVO result = resumeCenterService.uploadResumeFile(
 				studentUserId, 
 				file, 
-				dto.getUsage() != null ? dto.getUsage() : "resume_pdf",
-				dto.getTemplateId()
+				"resume_pdf",  // 默认用途
+				null  // 模板ID可选
 		);
 		
 		return ApiResponse.of(200, "File uploaded successfully", result);

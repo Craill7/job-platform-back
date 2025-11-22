@@ -15,10 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * 简历中心服务实现
@@ -55,6 +62,12 @@ public class ResumeCenterServiceImpl implements ResumeCenterService {
 	
 	@Autowired
 	private ApplicationMapper applicationMapper;
+
+	@Value("${app.storage.resume-dir}")
+	private String resumeDir;
+
+	@Value("${app.storage.resume-url-prefix}")
+	private String resumeUrlPrefix;
 
 	@Override
 	public ResumeDraftVO getResumeDraft(Integer studentUserId) {
@@ -476,31 +489,59 @@ public class ResumeCenterServiceImpl implements ResumeCenterService {
 			throw new BusinessException(ErrorCode.BAD_REQUEST, "文件不能为空");
 		}
 		
-		// TODO: 实现文件上传到云存储（OSS/CDN）
-		// 这里先返回一个模拟的URL，实际需要集成云存储服务
-		String fileUrl = "https://cdn.example.com/resumes/" + System.currentTimeMillis() + ".pdf";
-		String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf";
+		// 验证文件类型
+		String originalFilename = file.getOriginalFilename();
+		if (originalFilename != null && !originalFilename.toLowerCase().endsWith(".pdf")) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST, "仅支持PDF格式文件");
+		}
 		
-		Resume resume = new Resume();
-		resume.setStudentUserId(studentUserId);
-		resume.setFileName(fileName);
-		resume.setFileUrl(fileUrl);
-		resume.setFileSize(file.getSize());
-		resume.setUsageType(usage != null ? usage : "resume_pdf");
-		resume.setTemplateId(templateId);
+		// 验证文件大小（限制为20MB）
+		long maxSize = 20 * 1024 * 1024L; // 20MB
+		if (file.getSize() > maxSize) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST, "文件大小不能超过20MB");
+		}
 		
-		resumeMapper.insert(resume);
-		
-		ResumeFileVO vo = new ResumeFileVO();
-		vo.setId(resume.getId().intValue());
-		vo.setFileName(resume.getFileName());
-		vo.setFileUrl(resume.getFileUrl());
-		vo.setFileSize(resume.getFileSize() != null ? resume.getFileSize().intValue() : null);
-		vo.setTemplateId(resume.getTemplateId());
-		vo.setUsage(resume.getUsageType());
-		vo.setUploadedAt(resume.getUploadedAt());
-		
-		return vo;
+		try {
+			// 读取文件内容
+			byte[] fileBytes = file.getBytes();
+			
+			// 生成唯一文件名
+			String filename = generateUniqueFilename(originalFilename);
+			
+			// 保存文件到本地
+			Path savedPath = saveResumeFile(fileBytes, filename);
+			
+			// 构建访问URL
+			String fileUrl = buildResumeUrl(filename);
+			
+			// 保存到数据库
+			Resume resume = new Resume();
+			resume.setStudentUserId(studentUserId);
+			resume.setFileName(originalFilename != null ? originalFilename : "resume.pdf");
+			resume.setFileUrl(fileUrl);
+			resume.setFileSize(file.getSize());
+			resume.setUsageType(usage != null ? usage : "resume_pdf");
+			resume.setTemplateId(templateId);
+			resume.setUploadedAt(LocalDateTime.now()); // 设置上传时间
+			
+			resumeMapper.insert(resume);
+			
+			ResumeFileVO vo = new ResumeFileVO();
+			vo.setId(resume.getId().intValue());
+			vo.setFileName(resume.getFileName());
+			vo.setFileUrl(resume.getFileUrl());
+			vo.setFileSize(resume.getFileSize() != null ? resume.getFileSize().intValue() : null);
+			vo.setTemplateId(resume.getTemplateId());
+			vo.setUsage(resume.getUsageType());
+			vo.setUploadedAt(resume.getUploadedAt());
+			
+			logger.info("简历文件上传成功，学生ID：{}，文件路径：{}", studentUserId, savedPath.toAbsolutePath());
+			return vo;
+			
+		} catch (IOException e) {
+			logger.error("保存简历文件失败", e);
+			throw new BusinessException(ErrorCode.INTERNAL_ERROR, "保存文件失败：" + e.getMessage());
+		}
 	}
 
 	@Override
@@ -563,6 +604,36 @@ public class ResumeCenterServiceImpl implements ResumeCenterService {
 		vo.setEndDate(org.getEndDate());
 		vo.setDescription(org.getDescription());
 		return vo;
+	}
+
+	/**
+	 * 生成唯一文件名
+	 */
+	private String generateUniqueFilename(String originalFilename) {
+		String extension = ".pdf";
+		if (originalFilename != null && originalFilename.toLowerCase().endsWith(".pdf")) {
+			extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+		}
+		return UUID.randomUUID().toString().replace("-", "") + extension;
+	}
+
+	/**
+	 * 保存简历文件到本地
+	 */
+	private Path saveResumeFile(byte[] fileBytes, String filename) throws IOException {
+		Path dir = Paths.get(resumeDir).toAbsolutePath().normalize();
+		Files.createDirectories(dir);
+		Path filePath = dir.resolve(filename);
+		Files.write(filePath, fileBytes);
+		return filePath;
+	}
+
+	/**
+	 * 构建简历文件访问URL
+	 */
+	private String buildResumeUrl(String filename) {
+		String prefix = resumeUrlPrefix.endsWith("/") ? resumeUrlPrefix : resumeUrlPrefix + "/";
+		return prefix + filename;
 	}
 
 	private CompetitionExperienceResponseVO convertToCompetitionExperienceVO(CompetitionExperience comp) {

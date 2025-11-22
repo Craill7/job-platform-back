@@ -31,6 +31,12 @@ public class FileStorageConfig implements WebMvcConfigurer {
 	@Value("${app.storage.student-avatar-url-prefix}")
 	private String avatarUrlPrefix;
 
+	@Value("${app.storage.resume-dir}")
+	private String resumeDir;
+
+	@Value("${app.storage.resume-url-prefix}")
+	private String resumeUrlPrefix;
+
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
 		// 映射企业 Logo
@@ -38,6 +44,9 @@ public class FileStorageConfig implements WebMvcConfigurer {
 
 		// 映射学生头像
 		registerPath(registry, avatarUrlPrefix, avatarDir, "学生头像");
+
+		// 映射简历文件
+		registerPath(registry, resumeUrlPrefix, resumeDir, "简历文件");
 	}
 
 	// 提取公共方法
