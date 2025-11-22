@@ -196,7 +196,23 @@
 			</foreach>
 		</if>
 		<if test="workNature != null and workNature != ''">
-			AND j.work_nature = #{workNature}
+			<choose>
+				<when test="workNature == '企业招聘'">
+					AND c.nature_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14)
+				</when>
+				<when test="workNature == '事业单位招聘'">
+					AND c.nature_id IN (10, 11, 12)
+				</when>
+				<when test="workNature == '实习招聘'">
+					AND j.work_nature = 1
+				</when>
+				<when test="workNature == '校园招聘'">
+					AND j.work_nature = 2
+				</when>
+				<otherwise>
+					AND j.work_nature = #{workNature}
+				</otherwise>
+			</choose>
 		</if>
 		ORDER BY j.updated_at DESC, j.id DESC
 		LIMIT #{limit} OFFSET #{offset}
@@ -259,7 +275,23 @@
 			</foreach>
 		</if>
 		<if test="workNature != null and workNature != ''">
-			AND j.work_nature = #{workNature}
+			<choose>
+				<when test="workNature == '企业招聘'">
+					AND c.nature_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14)
+				</when>
+				<when test="workNature == '事业单位招聘'">
+					AND c.nature_id IN (10, 11, 12)
+				</when>
+				<when test="workNature == '实习招聘'">
+					AND j.work_nature = 1
+				</when>
+				<when test="workNature == '校园招聘'">
+					AND j.work_nature = 2
+				</when>
+				<otherwise>
+					AND j.work_nature = #{workNature}
+				</otherwise>
+			</choose>
 		</if>
 	</select>
 
