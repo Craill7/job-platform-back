@@ -110,7 +110,7 @@ public class StudentDashboardController {
 	 */
 	@GetMapping("/jobs/recent")
 	public ApiResponse<RecentJobsVO> getRecentJobs(
-			@RequestParam(required = false) String jobTypeFilter,
+			@RequestParam(name = "job_type_filter", required = false) String jobTypeFilter,
 			@RequestParam(required = false, defaultValue = "10") Integer limit,
 			Authentication authentication) {
 		logger.info("收到获取近期招聘信息请求，类型筛选：{}，限制数量：{}", jobTypeFilter, limit);

@@ -312,22 +312,30 @@
 	</select>
 
 	<select id="findRecentJobs" resultMap="JobMap">
-		SELECT * FROM jobs
-		WHERE status = 20
+		SELECT j.*
+		FROM jobs j
+		LEFT JOIN companies c ON j.company_id = c.company_id
+		WHERE j.status = 20
 		<if test="jobTypeFilter != null and jobTypeFilter != ''">
 			<choose>
 				<when test="jobTypeFilter == '企业招聘'">
-					AND work_nature = 2
+					AND c.nature_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14)
+				</when>
+
+				<when test="jobTypeFilter == '事业单位招聘'">
+
+					AND c.nature_id IN (10,11,12)
 				</when>
 				<when test="jobTypeFilter == '实习招聘'">
-					AND work_nature = 1
+					AND j.work_nature = 1
 				</when>
-				<when test="jobTypeFilter == '事业单位招聘'">
-					<!-- 事业单位招聘可能需要根据type字段或其他字段判断，这里暂时不做筛选 -->
+
+				<when test="jobTypeFilter == '校园招聘'">
+					AND j.work_nature = 2
 				</when>
 			</choose>
 		</if>
-		ORDER BY created_at DESC
+		ORDER BY j.created_at DESC
 		LIMIT #{limit}
 	</select>
 
