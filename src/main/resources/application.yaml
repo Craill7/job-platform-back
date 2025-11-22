@@ -9,8 +9,8 @@ spring:
     property-naming-strategy: SNAKE_CASE
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 5MB
+      max-file-size: 20MB
+      max-request-size: 20MB
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/job_platform # 自行修改数据库名称
@@ -56,6 +56,9 @@ app:
 
     student-avatar-dir: ${STUDENT_AVATAR_DIR:uploads/student-avatar}
     student-avatar-url-prefix: ${STUDENT_AVATAR_URL_PREFIX:/files/student-avatar}
+
+    resume-dir: ${RESUME_DIR:uploads/resume}
+    resume-url-prefix: ${RESUME_URL_PREFIX:/files/resume}
 
 ---
 spring:
