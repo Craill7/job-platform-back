@@ -89,6 +89,7 @@
 			a.id AS applicationId,
 			s.full_name AS candidateName,
 			s.avatar_url AS avatarUrl,
+			a.student_user_id AS userId,
 			MIN(YEAR(edu.start_date)) AS startYear,
 			MAX(edu.degree_level) AS degreeLevel,
 			a.status
@@ -102,7 +103,7 @@
 		<if test="status != null">
 			AND a.status = #{status}
 		</if>
-		GROUP BY a.id, s.full_name, a.status
+		GROUP BY a.id, s.full_name, s.avatar_url, a.student_user_id, a.status
 		ORDER BY a.updated_at DESC, a.id DESC
 		LIMIT #{limit} OFFSET #{offset}
 	</select>

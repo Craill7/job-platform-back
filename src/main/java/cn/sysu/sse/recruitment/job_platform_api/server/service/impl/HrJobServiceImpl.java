@@ -602,6 +602,7 @@ public class HrJobServiceImpl implements HrJobService {
         vo.setApplicationId(dto.getApplicationId());
         vo.setCandidateName(dto.getCandidateName());
         vo.setAvatarUrl(dto.getAvatarUrl());
+        vo.setUserId(dto.getUserId());
         vo.setGrade(buildGrade(dto.getStartYear()));
         vo.setDegree(mapDegree(dto.getDegreeLevel()));
         vo.setResumeStatus(mapStatusToDisplay(dto.getStatus()));

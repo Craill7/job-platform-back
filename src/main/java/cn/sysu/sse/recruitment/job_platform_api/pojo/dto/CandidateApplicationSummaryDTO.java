@@ -11,6 +11,7 @@ public class CandidateApplicationSummaryDTO {
 	private Integer applicationId;
 	private String candidateName;
 	private String avatarUrl;
+	private Integer userId;
 	private Integer startYear;
 	private Integer degreeLevel;
 	private ApplicationStatus status;

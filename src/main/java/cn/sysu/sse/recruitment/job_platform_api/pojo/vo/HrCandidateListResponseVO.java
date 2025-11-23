@@ -28,6 +28,9 @@ public class HrCandidateListResponseVO {
         @JsonProperty("avatar_url")
         private String avatarUrl;
 
+        @JsonProperty("user_id")
+        private Integer userId;
+
         private String grade;
 
         private String degree;
