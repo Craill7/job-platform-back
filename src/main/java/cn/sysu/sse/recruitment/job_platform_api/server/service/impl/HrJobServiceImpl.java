@@ -91,7 +91,7 @@ public class HrJobServiceImpl implements HrJobService {
 
     private static final Map<ApplicationStatus, Set<ApplicationStatus>> APPLICATION_STATUS_TRANSITIONS = Map.of(
             ApplicationStatus.SUBMITTED, EnumSet.of(ApplicationStatus.CANDIDATE, ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
-            ApplicationStatus.CANDIDATE, EnumSet.of(ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
+            ApplicationStatus.CANDIDATE, EnumSet.of(ApplicationStatus.SUBMITTED, ApplicationStatus.INTERVIEW, ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
             ApplicationStatus.INTERVIEW, EnumSet.of(ApplicationStatus.PASSED, ApplicationStatus.REJECTED),
             ApplicationStatus.PASSED, EnumSet.of(ApplicationStatus.PASSED),
             ApplicationStatus.REJECTED, EnumSet.of(ApplicationStatus.REJECTED)
