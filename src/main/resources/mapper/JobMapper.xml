@@ -195,14 +195,22 @@
 				#{tagId}
 			</foreach>
 		</if>
+		<if test="criteria != null">
+			<if test="criteria.companyNature != null and criteria.companyNature != ''">
+				<choose>
+					<when test="criteria.companyNature == '企业招聘'">
+						AND c.nature_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14)
+					</when>
+					<when test="criteria.companyNature == '事业单位招聘'">
+						AND c.nature_id IN (10, 11, 12)
+					</when>
+				</choose>
+			</if>
+		</if>
 		<if test="workNature != null and workNature != ''">
 			<choose>
-				<when test="workNature == '企业招聘'">
-					AND c.nature_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14)
-				</when>
-				<when test="workNature == '事业单位招聘'">
-					AND c.nature_id IN (10, 11, 12)
-				</when>
+
+
 				<when test="workNature == '实习招聘'">
 					AND j.work_nature = 1
 				</when>
@@ -274,14 +282,19 @@
 				#{tagId}
 			</foreach>
 		</if>
-		<if test="workNature != null and workNature != ''">
+		<if test="criteria.companyNature != null and criteria.companyNature != ''">
 			<choose>
-				<when test="workNature == '企业招聘'">
+				<when test="criteria.companyNature == '企业招聘'">
 					AND c.nature_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 13, 14)
 				</when>
-				<when test="workNature == '事业单位招聘'">
+				<when test="criteria.companyNature == '事业单位招聘'">
 					AND c.nature_id IN (10, 11, 12)
 				</when>
+			</choose>
+		</if>
+		<if test="workNature != null and workNature != ''">
+			<choose>
+
 				<when test="workNature == '实习招聘'">
 					AND j.work_nature = 1
 				</when>

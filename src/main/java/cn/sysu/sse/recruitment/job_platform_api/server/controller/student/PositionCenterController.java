@@ -55,8 +55,10 @@ public class PositionCenterController {
 			@RequestParam(value = "max_salary", required = false) Integer maxSalary,
 			@RequestParam(value = "page_size", required = false) Integer pageSize,
 			@RequestParam(value = "work_nature", required = false) String workNatureParam,
+			@RequestParam(value = "company_nature", required = false) String companyNatureParam,
+
 			Authentication authentication) {
-		mergeJobListQueryParams(queryDTO, province, city, title, companyName, minSalary, maxSalary, pageSize, workNatureParam);
+		mergeJobListQueryParams(queryDTO, province, city, title, companyName, minSalary, maxSalary, pageSize, workNatureParam,companyNatureParam);
 		logger.info("收到获取岗位列表请求，查询参数：{}", queryDTO);
 		
 		Integer studentUserId = getStudentUserId(authentication);
@@ -73,7 +75,8 @@ public class PositionCenterController {
 	                                     Integer minSalary,
 	                                     Integer maxSalary,
 	                                     Integer pageSize,
-	                                     String workNatureParam) {
+	                                     String workNatureParam,
+										 String companyNatureParam) {
 		if (StringUtils.hasText(title)) {
 			queryDTO.setTitle(title.trim());
 		}
@@ -99,6 +102,9 @@ public class PositionCenterController {
 		}
 		if (StringUtils.hasText(workNatureParam)) {
 			queryDTO.setWorkNature(workNatureParam.trim());
+		}
+		if (StringUtils.hasText(companyNatureParam)) {
+			queryDTO.setCompanyNature(companyNatureParam.trim());
 		}
 	}
 

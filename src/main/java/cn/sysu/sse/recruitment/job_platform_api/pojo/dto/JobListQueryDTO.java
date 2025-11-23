@@ -28,6 +28,7 @@ public class JobListQueryDTO {
 	private Integer maxSalary;
 	private String type; // 职能类别
 	private String workNature; // 工作性质（校招/实习等）
+	private String companyNature; //公司性质（事业单位招聘/企业招聘）
 	private Integer page = 1; // 页码
 	private Integer pageSize = 10; // 每页数量
 }
