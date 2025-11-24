@@ -46,7 +46,7 @@ public class RegisterServiceImpl implements RegisterService {
      */
     @Override
     @Transactional
-    public RegisterVO register(String email, String password, String verificationCode, String roleStr) {
+    public RegisterVO register(String email, String password, String verificationCode, String roleStr, String name) {
         logger.info("开始处理注册请求，邮箱：{}，角色：{}", email, roleStr);
         // 验证码校验（占位实现：验证码为123456）
         if (!"123456".equals(verificationCode)) {
@@ -92,7 +92,7 @@ public class RegisterServiceImpl implements RegisterService {
         if (role == UserRole.STUDENT) {
             Student student = new Student();
             student.setUserId(user.getId());
-            // student_id 现在可以为空，用户后续可以填写
+            student.setFullName(name);
             studentMapper.insert(student);
             logger.info("学生账户注册成功，邮箱：{}，用户ID：{}", processedEmail, user.getId());
             return RegisterVO.of(201, "学生账户注册成功");
@@ -100,7 +100,7 @@ public class RegisterServiceImpl implements RegisterService {
             // 如果是企业用户，自动创建 companies 记录
             Company company = new Company();
             company.setUserId(user.getId());
-            // company_name 现在可以为空，企业后续可以填写
+            company.setCompanyName(name);
             companyMapper.insert(company);
             logger.info("企业账户注册成功，等待审核，邮箱：{}，用户ID：{}", processedEmail, user.getId());
             return RegisterVO.of(202, "企业账户注册成功，请等待管理员审核");

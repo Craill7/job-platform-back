@@ -15,5 +15,7 @@ public class RegisterDTO {
     @NotBlank
     private String verificationCode;
     @NotBlank
+    private String name;
+    @NotBlank
     private String role; // "student" 或 "hr"
 }

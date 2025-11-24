@@ -30,7 +30,7 @@ public class RegisterController {
 	@PostMapping("/register")
 	public ApiResponse<Void> register(@Valid @RequestBody RegisterDTO req) {
 		logger.info("收到注册请求，邮箱：{}，角色：{}", req.getEmail(), req.getRole());
-		RegisterVO result = registerService.register(req.getEmail(), req.getPassword(), req.getVerificationCode(), req.getRole());
+		RegisterVO result = registerService.register(req.getEmail(), req.getPassword(), req.getVerificationCode(), req.getRole(), req.getName());
 		logger.info("注册请求处理完成，结果代码：{}", result.getCode());
 		
 		// 根据业务结果码决定是成功还是失败

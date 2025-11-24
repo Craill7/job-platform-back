@@ -15,5 +15,5 @@ public interface RegisterService {
      * @param roleStr 角色字符串
      * @return 注册结果
      */
-    RegisterVO register(String email, String password, String verificationCode, String roleStr);
+    RegisterVO register(String email, String password, String verificationCode, String roleStr, String name);
 }
