@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Mapper
 public interface EventMapper {
@@ -24,12 +25,17 @@ public interface EventMapper {
 	 * @return 活动列表
 	 */
 	List<Event> findUpcomingEvents(@Param("limit") Integer limit);
-	
+	Optional<Event> findById(@Param("id") Long id);
 	/**
-	 * 根据ID查询活动
-	 * @param id 活动ID
-	 * @return 活动
+	 * 搜索活动列表 (筛选标题或地点)
 	 */
-	Event findById(@Param("id") Long id);
+	List<Event> searchEvents(@Param("keyword") String keyword,
+							 @Param("offset") int offset,
+							 @Param("limit") int limit);
+
+	/**
+	 * 统计搜索结果总数
+	 */
+	long countSearchEvents(@Param("keyword") String keyword);
 }
 

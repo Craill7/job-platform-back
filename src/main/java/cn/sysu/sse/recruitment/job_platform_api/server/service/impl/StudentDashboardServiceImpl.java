@@ -3,6 +3,7 @@ package cn.sysu.sse.recruitment.job_platform_api.server.service.impl;
 import cn.sysu.sse.recruitment.job_platform_api.common.enums.ApplicationStatus;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.BusinessException;
 import cn.sysu.sse.recruitment.job_platform_api.common.error.ErrorCode;
+import cn.sysu.sse.recruitment.job_platform_api.common.result.Pagination;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.*;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.*;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 public class StudentDashboardServiceImpl implements StudentDashboardService {
 
 	private static final Logger logger = LoggerFactory.getLogger(StudentDashboardServiceImpl.class);
-
+	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 	@Autowired
 	private StudentMapper studentMapper;
 
@@ -339,5 +340,66 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 				return "状态详情未知";
 		}
 	}
+	@Override
+	public EventDetailVO getEventDetail(Long eventId) {
+		Event event = eventMapper.findById(eventId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "活动不存在"));
+
+		EventDetailVO vo = new EventDetailVO();
+		vo.setEventId(event.getId());
+		vo.setEventTitle(event.getEventTitle());
+		vo.setEventSummary(event.getEventSummary());
+		vo.setEventLocation(event.getEventLocation());
+		vo.setEventType(event.getEventType());
+
+		// [修改] 直接赋值，无需 switch-case 转换
+		vo.setEventTargetAudience(event.getTargetAudience());
+
+		if (event.getEventStartTime() != null) {
+			vo.setEventStartTime(event.getEventStartTime().format(TIME_FORMATTER));
+		}
+		if (event.getEventEndTime() != null) {
+			vo.setEventEndTime(event.getEventEndTime().format(TIME_FORMATTER));
+		}
+
+		return vo;
+	}
+
+	@Override
+	public EventListResponseVO getEventList(Integer page, Integer pageSize, String keyword) {
+		int p = (page == null || page < 1) ? 1 : page;
+		int size = (pageSize == null || pageSize < 1) ? 10 : pageSize;
+		int offset = (p - 1) * size;
+
+		// 执行查询
+		List<Event> events = eventMapper.searchEvents(keyword, offset, size);
+		long total = eventMapper.countSearchEvents(keyword);
+
+		// 转换 VO
+		List<EventListResponseVO.EventItem> items = events.stream().map(event -> {
+			EventListResponseVO.EventItem item = new EventListResponseVO.EventItem();
+			item.setEventId(event.getId());
+			item.setEventTitle(event.getEventTitle());
+			item.setEventSummary(event.getEventSummary());
+			item.setEventLocation(event.getEventLocation());
+
+			if (event.getEventStartTime() != null) {
+				item.setEventStartTime(event.getEventStartTime().format(TIME_FORMATTER));
+			}
+			return item;
+		}).collect(Collectors.toList());
+
+		// 构建分页信息
+		long totalPages = (total + size - 1) / size;
+		Pagination pagination = new Pagination(total, totalPages, p, size);
+
+		EventListResponseVO vo = new EventListResponseVO();
+		vo.setEvents(items);
+		vo.setPagination(pagination);
+
+		return vo;
+	}
+
+
 }
 

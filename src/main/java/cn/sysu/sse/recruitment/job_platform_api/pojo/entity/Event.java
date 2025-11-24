@@ -8,12 +8,12 @@ public class Event {
 	private Long id;
 	private Integer adminUserId;
 	private String eventTitle;
-	private String eventDescription;
+	private String eventSummary;
 	private LocalDateTime eventStartTime;
 	private LocalDateTime eventEndTime; 
 	private String eventLocation;
 	private String eventType;
-	private Integer targetAudience; // 0=all, 1=students, 2=companies
+	private String targetAudience;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 }

@@ -50,5 +50,22 @@ public interface StudentDashboardService {
 	 * @return 投递详情
 	 */
 	ApplicationDetailVO getApplicationDetail(Integer applicationId, Integer studentUserId);
+	// --- 新增方法 ---
+
+	/**
+	 * 获取招聘活动详情
+	 * @param eventId 活动ID
+	 * @return 活动详情 VO
+	 */
+	EventDetailVO getEventDetail(Long eventId);
+
+	/**
+	 * 获取招聘活动列表 (分页 + 搜索)
+	 * @param page 页码
+	 * @param pageSize 每页数量
+	 * @param keyword 搜索关键词 (标题或地点)
+	 * @return 列表响应 VO
+	 */
+	EventListResponseVO getEventList(Integer page, Integer pageSize, String keyword);
 }
 

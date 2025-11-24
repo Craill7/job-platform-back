@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.EventDetailVO;
+import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.EventListResponseVO;
 
 /**
  * 学生主页控制器
@@ -144,7 +146,40 @@ public class StudentDashboardController {
 		ApplicationDetailVO result = studentDashboardService.getApplicationDetail(id, studentUserId);
 		return ApiResponse.of(200, "获取投递详情成功", result);
 	}
+	/**
+	 * 1. 获取招聘活动详情公告
+	 */
+	@GetMapping("/events/{event_id}")
+	public ApiResponse<EventDetailVO> getEventDetail(
+			@PathVariable("event_id") Long eventId,
 
+			Authentication authentication) {
+		logger.info("收到获取活动详情请求，活动ID：{}", eventId);
+		Integer studentUserId = getStudentUserId(authentication);
+		if (studentUserId == null) {
+			return ApiResponse.error(401, "用户未登录");
+		}
+		EventDetailVO result = studentDashboardService.getEventDetail(eventId);
+		return ApiResponse.success(result);
+	}
+
+	/**
+	 * 2. 获取全部招聘活动列表 (带筛选)
+	 */
+	@GetMapping("/events/list")
+	public ApiResponse<EventListResponseVO> getEventList(
+			@RequestParam(value = "page", defaultValue = "1") Integer page,
+			@RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+			@RequestParam(value = "keyword", required = false) String keyword,
+			Authentication authentication) {
+		logger.info("收到获取活动列表请求，page={}, size={}, keyword={}", page, pageSize, keyword);
+		Integer studentUserId = getStudentUserId(authentication);
+		if (studentUserId == null) {
+			return ApiResponse.error(401, "用户未登录");
+		}
+		EventListResponseVO result = studentDashboardService.getEventList(page, pageSize, keyword);
+		return ApiResponse.success(result);
+	}
 	/**
 	 * 从Authentication中获取学生用户ID
 	 * @param authentication 认证信息
