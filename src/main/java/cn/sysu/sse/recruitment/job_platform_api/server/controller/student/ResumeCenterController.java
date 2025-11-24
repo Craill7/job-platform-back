@@ -6,7 +6,6 @@ import cn.sysu.sse.recruitment.job_platform_api.common.result.ApiResponse;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.*;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.ResumeCenterService;
-import cn.sysu.sse.recruitment.job_platform_api.common.util.Base64MultipartFile;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Base64;
 import java.util.List;
 
 /**
