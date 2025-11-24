@@ -9,7 +9,6 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.UploadResumeFileDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.PositionCenterService;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.ResumeCenterService;
-import cn.sysu.sse.recruitment.job_platform_api.common.util.Base64MultipartFile;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Base64;
 import java.util.List;
 
 /**
