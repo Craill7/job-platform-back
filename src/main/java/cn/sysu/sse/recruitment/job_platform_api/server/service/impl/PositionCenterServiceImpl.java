@@ -540,9 +540,6 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		if (StringUtils.hasText(job.getAddressDetail())) {
 			return job.getAddressDetail();
 		}
-		if (StringUtils.hasText(job.getWorkAddress())) {
-			return job.getWorkAddress();
-		}
 		return null;
 	}
 
@@ -552,9 +549,6 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		}
 		if (StringUtils.hasText(job.getAddressDetail())) {
 			return job.getAddressDetail();
-		}
-		if (StringUtils.hasText(job.getWorkAddress())) {
-			return job.getWorkAddress();
 		}
 		return resolveJobAddress(job);
 	}

@@ -32,7 +32,6 @@ public class Job {
 	private Integer requiredDegree;
 	private LocalDate requiredStartDate;
 	private String bonusPoints;
-	private String workAddress;
 
 	public String getLocation() {
 		return this.addressDetail;

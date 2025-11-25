@@ -25,14 +25,13 @@
 		<result column="required_degree" property="requiredDegree"/>
 		<result column="required_start_date" property="requiredStartDate"/>
 		<result column="bonus_points" property="bonusPoints"/>
-		<result column="work_address" property="workAddress"/>
 	</resultMap>
 
 	<insert id="insert" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job" useGeneratedKeys="true" keyProperty="id">
 		INSERT INTO jobs
-		(company_id, posted_by_user_id, title, description, tech_requirements, min_salary, max_salary, province_id, city_id, address_detail, work_nature, deadline, status, created_at, updated_at, type, department, headcount, view_count, required_degree, required_start_date, bonus_points, work_address)
+		(company_id, posted_by_user_id, title, description, tech_requirements, min_salary, max_salary, province_id, city_id, address_detail, work_nature, deadline, status, created_at, updated_at, type, department, headcount, view_count, required_degree, required_start_date, bonus_points)
 		VALUES
-		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{techRequirements}, #{minSalary}, #{maxSalary}, #{provinceId}, #{cityId}, #{addressDetail}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, COALESCE(#{viewCount}, 0), #{requiredDegree}, #{requiredStartDate}, #{bonusPoints}, #{workAddress})
+		(#{companyId}, #{postedByUserId}, #{title}, #{description}, #{techRequirements}, #{minSalary}, #{maxSalary}, #{provinceId}, #{cityId}, #{addressDetail}, #{workNature}, #{deadline}, #{status}, NOW(), NOW(), #{type}, #{department}, #{headcount}, COALESCE(#{viewCount}, 0), #{requiredDegree}, #{requiredStartDate}, #{bonusPoints})
 	</insert>
 
 	<update id="update" parameterType="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.Job">
@@ -56,8 +55,7 @@
 			view_count = #{viewCount},
 			required_degree = #{requiredDegree},
 			required_start_date = #{requiredStartDate},
-			bonus_points = #{bonusPoints},
-			work_address = #{workAddress}
+			bonus_points = #{bonusPoints}
 		WHERE id = #{id}
 	</update>
 

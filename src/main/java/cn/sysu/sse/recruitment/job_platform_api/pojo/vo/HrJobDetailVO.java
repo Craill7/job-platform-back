@@ -21,7 +21,6 @@ public class HrJobDetailVO {
     private Integer provinceId;
     private Integer cityId;
     private String addressDetail;
-    private String workAddress;
     private Integer workNature;
     private String department;
     private Integer headcount;

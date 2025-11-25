@@ -23,8 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
-import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -278,7 +276,6 @@ public class HrJobServiceImpl implements HrJobService {
                 ? parseJobStatusEnum(dto.getStatus(), true)
                 : JobStatus.DRAFT;
         String addressDetail = resolveAddressDetail(dto);
-        String workAddress = StringUtils.hasText(dto.getWorkAddress()) ? dto.getWorkAddress() : addressDetail;
 
         Job job = new Job();
         job.setCompanyId(company.getCompanyId());
@@ -300,7 +297,6 @@ public class HrJobServiceImpl implements HrJobService {
         job.setProvinceId(dto.getProvinceId());
         job.setCityId(dto.getCityId());
         job.setAddressDetail(addressDetail);
-        job.setWorkAddress(workAddress);
 
         int inserted = jobMapper.insert(job);
         if (inserted != 1 || job.getId() == null) {
@@ -424,7 +420,6 @@ public class HrJobServiceImpl implements HrJobService {
 
         SalaryRangeValue salaryRange = resolveSalaryRange(dto, job);
         String resolvedAddressDetail = resolveAddressDetail(dto, job);
-        String resolvedWorkAddress = resolveWorkAddress(dto, resolvedAddressDetail, job);
 
         job.setTitle(valueOrDefault(dto.getTitle(), job.getTitle()));
         job.setDepartment(valueOrDefault(dto.getDepartment(), job.getDepartment()));
@@ -439,7 +434,6 @@ public class HrJobServiceImpl implements HrJobService {
         job.setProvinceId(valueOrDefault(dto.getProvinceId(), job.getProvinceId()));
         job.setCityId(valueOrDefault(dto.getCityId(), job.getCityId()));
         job.setAddressDetail(resolvedAddressDetail);
-        job.setWorkAddress(resolvedWorkAddress);
         job.setWorkNature(workNature);
         job.setStatus(targetStatus);
         job.setMinSalary(salaryRange.getMinSalary());
@@ -805,16 +799,6 @@ public class HrJobServiceImpl implements HrJobService {
         return job.getAddressDetail();
     }
 
-    private String resolveWorkAddress(HrJobUpdateDTO dto, String resolvedAddressDetail, Job job) {
-        if (dto.getWorkAddress() != null) {
-            return dto.getWorkAddress();
-        }
-        if (!StringUtils.hasText(job.getWorkAddress())) {
-            return resolvedAddressDetail;
-        }
-        return job.getWorkAddress();
-    }
-
     private HrJobStatusResponseVO buildJobStatusResponse(Job job) {
         HrJobStatusResponseVO response = new HrJobStatusResponseVO();
         response.setJobId(job.getId());
@@ -844,7 +828,6 @@ public class HrJobServiceImpl implements HrJobService {
         vo.setDeadline(job.getDeadline());
         vo.setCreatedAt(job.getCreatedAt());
         vo.setUpdatedAt(job.getUpdatedAt());
-        vo.setWorkAddress(job.getWorkAddress());
         return vo;
     }
 

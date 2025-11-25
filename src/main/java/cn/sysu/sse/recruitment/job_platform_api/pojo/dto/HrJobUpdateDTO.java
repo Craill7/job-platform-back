@@ -79,7 +79,4 @@ public class HrJobUpdateDTO {
 
 	@JsonProperty("tags")
 	private List<Integer> tags;
-
-	@JsonProperty("work_address")
-	private String workAddress;
 }
