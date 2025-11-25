@@ -26,6 +26,7 @@ public class EventDetailVO {
     @JsonProperty("event_target_audience")
     private String eventTargetAudience; // 转换后的中文描述
 
+
     @JsonProperty("event_summary")
     private String eventSummary;
 }

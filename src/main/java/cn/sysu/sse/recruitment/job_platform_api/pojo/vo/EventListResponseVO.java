@@ -24,6 +24,7 @@ public class EventListResponseVO {
         @JsonProperty("event_location")
         private String eventLocation;
 
+
         @JsonProperty("event_summary")
         private String eventSummary;
     }
