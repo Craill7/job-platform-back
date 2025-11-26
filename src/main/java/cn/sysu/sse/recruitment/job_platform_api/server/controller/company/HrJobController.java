@@ -7,6 +7,7 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobListQueryDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.dto.HrJobUpdateDTO;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.HrJobService;
+import cn.sysu.sse.recruitment.job_platform_api.server.service.JobFormParseService;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.ResumePreviewService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/hr")
@@ -33,6 +35,9 @@ public class HrJobController {
 
     @Autowired
     private HrJobService hrJobService;
+
+    @Autowired
+    private JobFormParseService jobFormParseService;
 
     @GetMapping("/jobs")
     public ApiResponse<HrJobListResponseVO> listCompanyJobs(@ModelAttribute HrJobListQueryDTO queryDTO,
@@ -165,6 +170,26 @@ public class HrJobController {
         logger.info("收到岗位详情请求，userId={} jobId={}", userId, jobId);
         HrJobDetailResponseVO detail = hrJobService.getJobDetail(userId, jobId);
         return ApiResponse.success(detail);
+    }
+
+    /**
+     * 大模型自动填写岗位表单
+     */
+    @PostMapping("/jobs/parse")
+    public ApiResponse<JobFormParseResponseVO> parseJobForm(
+            @RequestParam("input_type") String inputType,
+            @RequestParam(value = "text", required = false) String text,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            Authentication authentication) {
+        Integer userId = getHrUserId(authentication);
+        if (userId == null) {
+            logger.warn("未登录用户尝试调用岗位表单解析");
+            return ApiResponse.error(401, "用户未登录");
+        }
+        logger.info("收到大模型岗位解析请求，userId={} inputType={} textLength={}", userId, inputType,
+                text != null ? text.length() : null);
+        JobFormParseService.JobFormParseResult result = jobFormParseService.parseJobForm(userId, inputType, image, text);
+        return ApiResponse.of(200, result.getMessage(), result.getResponse());
     }
 
     /**
