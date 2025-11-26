@@ -737,6 +737,7 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 		List<DeliveryListItemVO> jobList = deliveryJobs.stream().map(dto -> {
 			DeliveryListItemVO vo = new DeliveryListItemVO();
 			vo.setJobId(dto.getJobId());
+			vo.setApplicationId(dto.getApplicationId());
 			vo.setTitle(dto.getJobTitle());
 			vo.setDepartment(dto.getDepartment());
 			vo.setCompanyName(dto.getCompanyName());

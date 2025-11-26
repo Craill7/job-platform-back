@@ -15,7 +15,10 @@ public class DeliveryListItemVO {
 	
 	@JsonProperty("job_id")
 	private Integer jobId;
-	
+
+	@JsonProperty("application_id")
+	private Integer applicationId;
+
 	@JsonProperty("company_name")
 	private String companyName;
 	
@@ -34,5 +37,6 @@ public class DeliveryListItemVO {
 	private LocalDateTime submittedAt;
 	
 	private String status;
+
 }
 
