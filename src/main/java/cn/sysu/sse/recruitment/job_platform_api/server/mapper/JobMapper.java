@@ -47,7 +47,7 @@ public interface JobMapper {
 	long countFavoriteJobsByStudent(@Param("studentUserId") Integer studentUserId);
 	List<Job> findOtherJobsByCompany(@Param("companyId") Integer companyId,
 	                                 @Param("excludeJobId") Integer excludeJobId,
-	                                 @Param("limit") int limit);
+	                                 @Param("limit") Integer limit);
 
 	int increaseViewCount(@Param("jobId") Integer jobId);
 	

@@ -84,8 +84,17 @@ public class CompanyCenterServiceImpl implements CompanyCenterService {
 			vo.setCompanyScale(dict.getCompanyScale());
 		}
 
-		// 查询企业官网链接
+		// 查询企业外部链接
 		List<CompanyExternalLink> externalLinks = companyExternalLinkMapper.listByCompanyId(companyId);
+		List<CompanyDetailVO.CompanyLinkVO> linkVOList = externalLinks.stream()
+				.map(link -> {
+					CompanyDetailVO.CompanyLinkVO linkVO = new CompanyDetailVO.CompanyLinkVO();
+					linkVO.setLinkName(link.getLinkName());
+					linkVO.setLinkUrl(link.getLinkUrl());
+					return linkVO;
+				})
+				.collect(Collectors.toList());
+		vo.setCompanyLinks(linkVOList);
 
 
 		// 构建统计信息
@@ -107,18 +116,18 @@ public class CompanyCenterServiceImpl implements CompanyCenterService {
 
 		vo.setStatistics(statistics);
 
-		// 查询企业的其他岗位（最多返回前几个）
-		List<Job> otherJobs = jobMapper.findOtherJobsByCompany(companyId, null, 10);
-		List<CompanyDetailVO.OtherJobVO> otherJobList = otherJobs.stream()
+		// 查询企业的所有岗位
+		List<Job> otherJobs = jobMapper.findOtherJobsByCompany(companyId, null, null);
+		List<CompanyDetailVO.JobVO> otherJobList = otherJobs.stream()
 				.map(job -> {
-					CompanyDetailVO.OtherJobVO otherJobVO = new CompanyDetailVO.OtherJobVO();
+					CompanyDetailVO.JobVO otherJobVO = new CompanyDetailVO.JobVO();
 					otherJobVO.setJobId(job.getId());
 					otherJobVO.setJobTitle(job.getTitle());
 					otherJobVO.setPostedAt(job.getCreatedAt() != null ? job.getCreatedAt().toLocalDate() : null);
 					return otherJobVO;
 				})
 				.collect(Collectors.toList());
-		vo.setOtherJobs(otherJobList);
+		vo.setJobs(otherJobList);
 
 		return vo;
 	}

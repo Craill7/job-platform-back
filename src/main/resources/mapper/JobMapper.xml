@@ -332,7 +332,9 @@
 		</if>
 		AND status = 20
 		ORDER BY updated_at DESC
-		LIMIT #{limit}
+		<if test="limit != null">
+			LIMIT #{limit}
+		</if>
 	</select>
 
 	<update id="increaseViewCount">

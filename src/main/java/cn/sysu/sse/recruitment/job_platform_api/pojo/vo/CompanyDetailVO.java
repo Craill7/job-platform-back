@@ -40,11 +40,14 @@ public class CompanyDetailVO {
 
 	private String description;
 
+	@JsonProperty("company_links")
+	private List<CompanyLinkVO> companyLinks;
+
 	@JsonProperty("statistics")
 	private StatisticsVO statistics;
 
-	@JsonProperty("other_jobs")
-	private List<OtherJobVO> otherJobs;
+	@JsonProperty("jobs")
+	private List<JobVO> jobs;
 
 	@Data
 	public static class StatisticsVO {
@@ -59,7 +62,7 @@ public class CompanyDetailVO {
 	}
 
 	@Data
-	public static class OtherJobVO {
+	public static class JobVO {
 		@JsonProperty("job_id")
 		private Integer jobId;
 
@@ -68,6 +71,15 @@ public class CompanyDetailVO {
 
 		@JsonProperty("posted_at")
 		private LocalDate postedAt;
+	}
+
+	@Data
+	public static class CompanyLinkVO {
+		@JsonProperty("link_name")
+		private String linkName;
+
+		@JsonProperty("link_url")
+		private String linkUrl;
 	}
 }
 
