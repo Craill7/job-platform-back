@@ -83,9 +83,6 @@ public class JobDetailVO {
 		@JsonProperty("contact_person_phone")
 		private String contactPersonPhone;
 
-		@JsonProperty("company_website_url")
-		private String companyWebsiteUrl;
-
 		@JsonProperty("company_links")
 		private List<CompanyLinkVO> companyLinks;
 	}

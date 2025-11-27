@@ -350,7 +350,6 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 			companyInfo.setCompanyName(company.getCompanyName());
 			companyInfo.setContactPersonName(company.getContactPersonName());
 			companyInfo.setContactPersonPhone(company.getContactPersonPhone());
-			companyInfo.setCompanyWebsiteUrl(null);
 
 			companyDictionaryMapper.findByCompanyId(company.getCompanyId()).ifPresent(dict -> {
 				companyInfo.setCompanyIndustry(dict.getIndustryName());
@@ -371,7 +370,6 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 								|| "企业网站".equals(linkName);
 					})
 					.findFirst();
-			companyInfo.setCompanyWebsiteUrl(websiteLink.map(CompanyExternalLink::getLinkUrl).orElse(null));
 			
 			// 转换所有外部链接为VO
 			List<JobDetailVO.CompanyLinkVO> linkVOList = externalLinks.stream()

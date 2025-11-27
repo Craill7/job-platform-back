@@ -29,9 +29,6 @@ public class CompanyDetailVO {
 	@JsonProperty("company_address")
 	private String companyAddress;
 
-	@JsonProperty("company_website_url")
-	private String companyWebsiteUrl;
-
 	@JsonProperty("company_logo_url")
 	private String companyLogoUrl;
 

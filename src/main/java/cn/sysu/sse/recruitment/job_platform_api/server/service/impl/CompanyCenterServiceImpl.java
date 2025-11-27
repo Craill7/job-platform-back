@@ -86,10 +86,7 @@ public class CompanyCenterServiceImpl implements CompanyCenterService {
 
 		// 查询企业官网链接
 		List<CompanyExternalLink> externalLinks = companyExternalLinkMapper.listByCompanyId(companyId);
-		Optional<CompanyExternalLink> websiteLink = externalLinks.stream()
-				.filter(link -> "官网".equals(link.getLinkName()) || "website".equalsIgnoreCase(link.getLinkName()))
-				.findFirst();
-		vo.setCompanyWebsiteUrl(websiteLink.map(CompanyExternalLink::getLinkUrl).orElse(null));
+
 
 		// 构建统计信息
 		CompanyDetailVO.StatisticsVO statistics = new CompanyDetailVO.StatisticsVO();
