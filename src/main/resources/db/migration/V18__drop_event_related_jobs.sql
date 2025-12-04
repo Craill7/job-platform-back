@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS job.event_related_jobs;
