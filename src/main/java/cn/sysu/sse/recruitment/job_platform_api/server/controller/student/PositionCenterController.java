@@ -70,8 +70,8 @@ public class PositionCenterController {
 	                                     String city,
 	                                     String title,
 	                                     String companyName,
-	                                     Integer minSalary,
-	                                     Integer maxSalary,
+	                                     Integer minSalary,  // 改回 Integer
+	                                     Integer maxSalary,  // 改回 Integer
 	                                     Integer pageSize,
 	                                     String workNatureParam,
 										 String companyNatureParam) {
@@ -89,10 +89,10 @@ public class PositionCenterController {
 			queryDTO.setCity(city.trim());
 			queryDTO.setCityId(parseIntegerOrNull(city));
 		}
-		if (minSalary != null) {
+		if (minSalary != null) {  // 直接使用 Integer，不需要字符串解析
 			queryDTO.setMinSalary(minSalary);
 		}
-		if (maxSalary != null) {
+		if (maxSalary != null) {  // 直接使用 Integer，不需要字符串解析
 			queryDTO.setMaxSalary(maxSalary);
 		}
 		if (pageSize != null && pageSize > 0) {
@@ -137,6 +137,47 @@ public class PositionCenterController {
 		}
 		
 		JobListResponseVO result = positionCenterService.getFavoriteJobs(page, size, studentUserId);
+		
+		return ApiResponse.success(result);
+	}
+
+	/**
+	 * 搜索用户收藏的岗位列表（支持多条件筛选）
+	 * @param queryDTO 查询参数
+	 * @param province 省份
+	 * @param city 城市
+	 * @param title 职位名称
+	 * @param companyName 公司名称
+	 * @param minSalary 最低薪资
+	 * @param maxSalary 最高薪资
+	 * @param pageSize 每页数量
+	 * @param workNatureParam 工作性质
+	 * @param companyNatureParam 公司性质
+	 * @param authentication 当前登录用户认证信息
+	 * @return 收藏岗位列表
+	 */
+	@GetMapping("/favorites/search")
+	public ApiResponse<JobListResponseVO> searchFavoriteJobs(
+			@ModelAttribute JobListQueryDTO queryDTO,
+			@RequestParam(value = "province", required = false) String province,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "title", required = false) String title,
+			@RequestParam(value = "company_name", required = false) String companyName,
+			@RequestParam(value = "min_salary", required = false) Integer minSalary,  // 改为 Integer
+			@RequestParam(value = "max_salary", required = false) Integer maxSalary,  // 改为 Integer
+			@RequestParam(value = "page_size", required = false) Integer pageSize,
+			@RequestParam(value = "work_nature", required = false) String workNatureParam,
+			@RequestParam(value = "company_nature", required = false) String companyNatureParam,
+			Authentication authentication) {
+		mergeJobListQueryParams(queryDTO, province, city, title, companyName, minSalary, maxSalary, pageSize, workNatureParam, companyNatureParam);
+		logger.info("收到搜索收藏岗位列表请求，查询参数：{}", queryDTO);
+		
+		Integer studentUserId = getStudentUserId(authentication);
+		if (studentUserId == null) {
+			return ApiResponse.error(401, "用户未登录");
+		}
+		
+		JobListResponseVO result = positionCenterService.searchFavoriteJobs(queryDTO, studentUserId);
 		
 		return ApiResponse.success(result);
 	}

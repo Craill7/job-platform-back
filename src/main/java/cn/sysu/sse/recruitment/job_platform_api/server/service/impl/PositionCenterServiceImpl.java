@@ -260,6 +260,133 @@ public class PositionCenterServiceImpl implements PositionCenterService {
 	}
 
 	@Override
+	public JobListResponseVO searchFavoriteJobs(JobListQueryDTO queryDTO, Integer studentUserId) {
+		logger.info("搜索收藏岗位列表，查询参数：{}，学生ID：{}", queryDTO, studentUserId);
+		
+		if (studentUserId == null) {
+			throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+		}
+		
+		// 处理标签查询（复用 getJobList 的逻辑）
+		List<Integer> tagIds = null;
+		if (StringUtils.hasText(queryDTO.getTag())) {
+			List<String> tagNames = Arrays.stream(queryDTO.getTag().split(","))
+					.map(String::trim)
+					.filter(StringUtils::hasText)
+					.collect(Collectors.toList());
+			if (!tagNames.isEmpty()) {
+				List<Tag> tags = tagMapper.findByNameIn(tagNames);
+				tagIds = tags.stream().map(Tag::getId).collect(Collectors.toList());
+			}
+		}
+		
+		// 处理工作性质
+		String workNature = null;
+		if (StringUtils.hasText(queryDTO.getWorkNature())) {
+			// 将中文转换为枚举值
+			if ("校招".equals(queryDTO.getWorkNature()) || "实习".equals(queryDTO.getWorkNature())) {
+				workNature = "校招".equals(queryDTO.getWorkNature()) ? "2" : "1";
+			} else {
+				workNature = queryDTO.getWorkNature();
+			}
+		}
+		
+		// 处理岗位类别：将类别名称转换为ID
+		if (StringUtils.hasText(queryDTO.getType())) {
+			String typeParam = queryDTO.getType().trim();
+			// 先尝试解析为数字ID
+			try {
+				Integer typeId = Integer.parseInt(typeParam);
+				// 如果是数字，直接使用（MyBatis会自动转换）
+				queryDTO.setType(String.valueOf(typeId));
+			} catch (NumberFormatException e) {
+				// 如果不是数字，按类别名称查找
+				JobCategory category = jobCategoryMapper.findByName(typeParam);
+				if (category != null) {
+					// 将类别名称替换为ID，以便后续查询使用
+					queryDTO.setType(String.valueOf(category.getId()));
+				} else {
+					// 如果找不到对应的类别，清空type参数，避免查询错误
+					logger.warn("未找到类别名称：{}", typeParam);
+					queryDTO.setType(null);
+				}
+			}
+		}
+		
+		// 根据名称解析省市ID
+		resolveLocationFilters(queryDTO);
+
+		// 分页参数
+		int page = queryDTO.getPage() != null && queryDTO.getPage() > 0 ? queryDTO.getPage() : 1;
+		int pageSize = queryDTO.getPageSize() != null && queryDTO.getPageSize() > 0 ? queryDTO.getPageSize() : 10;
+		int offset = (page - 1) * pageSize;
+		
+		// 查询收藏岗位列表（应用搜索条件）
+		List<Job> jobs = jobMapper.searchFavoriteJobs(
+				studentUserId,
+				queryDTO,
+				tagIds,
+				workNature,
+				offset,
+				pageSize
+		);
+		
+		// 查询总数
+		long total = jobMapper.countSearchFavoriteJobs(
+				studentUserId,
+				queryDTO,
+				tagIds,
+				workNature
+		);
+		
+		// 预加载省市名称
+		Map<Integer, Province> provinceMap = loadProvinces(jobs);
+		Map<Integer, City> cityMap = loadCities(jobs);
+
+		Map<Integer, JobCategory> categoryMap = loadJobCategories(jobs);
+
+		// 转换为VO（所有都是收藏的）
+		List<JobListItemVO> jobList = jobs.stream().map(job -> {
+			JobListItemVO vo = new JobListItemVO();
+			vo.setJobId(job.getId());
+			vo.setTitle(job.getTitle());
+			
+			Optional<Company> companyOpt = companyMapper.findById(job.getCompanyId());
+			if (companyOpt.isPresent()) {
+				Company company = companyOpt.get();
+				vo.setCompanyName(company.getCompanyName());
+				vo.setLogoUrl(company.getLogoUrl());
+			}
+			
+			if (job.getMinSalary() != null && job.getMaxSalary() != null) {
+				vo.setSalaryRange(job.getMinSalary() + "-" + job.getMaxSalary());
+			} else if (job.getMinSalary() != null) {
+				vo.setSalaryRange(job.getMinSalary() + "及以上");
+			} else {
+				vo.setSalaryRange("面议");
+			}
+			
+			vo.setAddress(buildDisplayAddress(job, provinceMap, cityMap));
+			vo.setWorkNature(job.getWorkNature() != null ? 
+					(job.getWorkNature() == WorkNature.INTERNHIP ? "实习" : "校招") : null);
+			vo.setDepartment(job.getDepartment());
+			vo.setType(resolveJobCategoryName(job, categoryMap));
+			vo.setHeadcount(job.getHeadcount());
+			vo.setIsFavorited(true); // 收藏列表中的都是已收藏
+			
+			return vo;
+		}).collect(Collectors.toList());
+		
+		JobListResponseVO response = new JobListResponseVO();
+		response.setTotal(total);
+		response.setPage(page);
+		response.setPageSize(pageSize);
+		response.setJobs(jobList);
+		
+		return response;
+	}
+
+	@Override
 	public JobDetailVO getJobDetail(Integer jobId, Integer studentUserId, HttpServletRequest request) {
 		logger.info("获取职位详情，职位ID：{}，学生ID：{}", jobId, studentUserId);
 		

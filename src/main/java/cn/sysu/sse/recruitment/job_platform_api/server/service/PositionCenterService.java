@@ -30,6 +30,14 @@ public interface PositionCenterService {
 	JobListResponseVO getFavoriteJobs(Integer page, Integer pageSize, Integer studentUserId);
 	
 	/**
+	 * 搜索用户收藏的岗位列表（支持多条件筛选）
+	 * @param queryDTO 查询参数
+	 * @param studentUserId 当前登录学生ID
+	 * @return 岗位列表响应
+	 */
+	JobListResponseVO searchFavoriteJobs(JobListQueryDTO queryDTO, Integer studentUserId);
+	
+	/**
 	 * 获取职位详情
 	 * @param jobId 职位ID
 	 * @param studentUserId 当前登录学生ID（可为null）

@@ -45,6 +45,16 @@ public interface JobMapper {
 	                                    @Param("offset") int offset,
 	                                    @Param("limit") int limit);
 	long countFavoriteJobsByStudent(@Param("studentUserId") Integer studentUserId);
+	List<Job> searchFavoriteJobs(@Param("studentUserId") Integer studentUserId,
+	                             @Param("criteria") JobListQueryDTO criteria,
+	                             @Param("tagIds") List<Integer> tagIds,
+	                             @Param("workNature") String workNature,
+	                             @Param("offset") int offset,
+	                             @Param("limit") int limit);
+	long countSearchFavoriteJobs(@Param("studentUserId") Integer studentUserId,
+	                              @Param("criteria") JobListQueryDTO criteria,
+	                              @Param("tagIds") List<Integer> tagIds,
+	                              @Param("workNature") String workNature);
 	List<Job> findOtherJobsByCompany(@Param("companyId") Integer companyId,
 	                                 @Param("excludeJobId") Integer excludeJobId,
 	                                 @Param("limit") Integer limit);
