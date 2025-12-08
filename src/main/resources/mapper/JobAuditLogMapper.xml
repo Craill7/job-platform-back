@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.sysu.sse.recruitment.job_platform_api.server.mapper.JobAuditLogMapper">
+
+    <resultMap id="JobAuditLogMap" type="cn.sysu.sse.recruitment.job_platform_api.pojo.entity.JobAuditLog">
+        <id column="id" property="id" />
+        <result column="job_id" property="jobId" />
+        <result column="operator_id" property="operatorId" />
+        <result column="operator_contact" property="operatorContact" />
+        <result column="audit_status" property="auditStatus" />
+        <result column="remark" property="remark" />
+        <result column="created_at" property="createdAt" />
+    </resultMap>
+
+    <select id="findLatestByJobId" resultMap="JobAuditLogMap">
+        SELECT
+            id,
+            job_id,
+            operator_id,
+            operator_contact,
+            audit_status,
+            remark,
+            created_at
+        FROM job_audit_logs
+        WHERE job_id = #{jobId}
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+</mapper>

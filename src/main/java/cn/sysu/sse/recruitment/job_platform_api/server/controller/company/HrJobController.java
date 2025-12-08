@@ -52,6 +52,22 @@ public class HrJobController {
         return ApiResponse.success(data);
     }
 
+    /**
+     * 获取岗位最新审核详情
+     */
+    @GetMapping("/jobs/audit/{jobId}")
+    public ApiResponse<HrJobAuditInfoVO> getJobLatestAuditInfo(@PathVariable("jobId") Integer jobId,
+                                                               Authentication authentication) {
+        Integer userId = getHrUserId(authentication);
+        if (userId == null) {
+            logger.warn("未登录用户尝试查看岗位审核详情 jobId={}", jobId);
+            return ApiResponse.error(401, "用户未登录");
+        }
+        logger.info("收到岗位审核详情请求 userId={} jobId={}", userId, jobId);
+        HrJobAuditInfoVO data = hrJobService.getJobLatestAuditInfo(userId, jobId);
+        return ApiResponse.success(data);
+    }
+
     @GetMapping("/talentpool/job/list/{job_id}")
     public ApiResponse<HrCandidateListResponseVO> listCandidatesByJob(
             @PathVariable("job_id") Integer jobId,

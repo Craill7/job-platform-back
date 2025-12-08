@@ -54,6 +54,8 @@ public class HrJobServiceImpl implements HrJobService {
     @Autowired
     private ResumeMapper resumeMapper;
 
+    @Autowired
+    private JobAuditLogMapper jobAuditLogMapper;
 
 
     private static final Map<String, WorkNature> WORK_NATURE_MAP = Map.ofEntries(
@@ -214,6 +216,31 @@ public class HrJobServiceImpl implements HrJobService {
         response.setStatusCode(targetStatus != null ? targetStatus.getCode() : null);
         response.setStatus(mapStatusToDisplay(targetStatus));
         return response;
+    }
+
+    @Override
+    public HrJobAuditInfoVO getJobLatestAuditInfo(Integer userId, Integer jobId) {
+        logger.info("查询岗位审核记录 userId={} jobId={}", userId, jobId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+        }
+
+        Company company = companyMapper.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "未找到企业信息"));
+
+        Job job = jobMapper.findByIdAndCompany(jobId, company.getCompanyId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "岗位不存在或无权访问"));
+
+        JobAuditLog auditLog = jobAuditLogMapper.findLatestByJobId(jobId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "暂无审核记录"));
+
+        HrJobAuditInfoVO vo = new HrJobAuditInfoVO();
+        vo.setJobId(job.getId());
+        vo.setAuditStatus(auditLog.getAuditStatus());
+        vo.setRemark(auditLog.getRemark());
+        vo.setOperatorContact(auditLog.getOperatorContact());
+        vo.setAuditTime(auditLog.getCreatedAt());
+        return vo;
     }
 
     private String resolveResumeUrl(Long resumeId) {

@@ -70,5 +70,13 @@ public interface HrJobService {
 	 */
 	HrApplicationStatusResponseVO updateApplicationStatus(Integer userId, Integer applicationId, HrApplicationStatusUpdateDTO dto);
 
+	/**
+	 * 获取岗位最新审核记录
+	 * @param userId HR 用户 ID
+	 * @param jobId 岗位 ID
+	 * @return 最新审核详情
+	 */
+	HrJobAuditInfoVO getJobLatestAuditInfo(Integer userId, Integer jobId);
+
 
 }
