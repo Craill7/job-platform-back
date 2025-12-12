@@ -26,6 +26,7 @@ public class StudentProfileVO {
         private String jobSeekingStatus;
         private String email;
         private String phoneNumber;
+        private String studentId;
     }
 
     @Data
@@ -42,7 +43,11 @@ public class StudentProfileVO {
     @Data
     public static class ExpectedJob {
         private String expectedPosition;
-        private String expectedSalary;
+        @JsonProperty("expected_min_salary")
+        private Integer expectedMinSalary;
+
+        @JsonProperty("expected_max_salary")
+        private Integer expectedMaxSalary;
     }
 
     @Data

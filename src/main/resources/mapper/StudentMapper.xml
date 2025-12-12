@@ -32,6 +32,7 @@
 		UPDATE students
 		SET
 			avatar_url = #{avatarUrl},
+			student_id = #{studentId},
 			full_name = #{fullName},
 			phone_number = #{phoneNumber},
 			gender = #{gender},

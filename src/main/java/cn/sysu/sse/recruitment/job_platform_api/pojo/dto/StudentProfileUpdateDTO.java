@@ -38,6 +38,9 @@ public class StudentProfileUpdateDTO {
         private String jobSeekingStatus;
         private String email;
         private String phoneNumber;
+
+        @JsonProperty("student_id")
+        private String studentId;
     }
 
     @Data
@@ -54,6 +57,10 @@ public class StudentProfileUpdateDTO {
     @Data
     public static class ExpectedJobDTO {
         private String expectedPosition;
-        private String expectedSalary;
+        @JsonProperty("expected_min_salary")
+        private Integer expectedMinSalary;
+
+        @JsonProperty("expected_max_salary")
+        private Integer expectedMaxSalary;
     }
 }

@@ -53,6 +53,7 @@ public class StudentCenterServiceImpl implements StudentCenterService {
         vo.setSchoolName(schoolName);
         vo.setPhoneNumber(student.getPhoneNumber());
         vo.setEmail(user.getEmail());
+        vo.setStudentId(student.getStudentId());
         // 格式化最后登录时间
         if (user.getLastLoginAt() != null) {
             vo.setLastLoginAt(user.getLastLoginAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));

@@ -90,6 +90,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         basic.setJobSeekingStatus(mapJobStatusToString(student.getJobSeekingStatus()));
         basic.setEmail(user.getEmail());
         basic.setPhoneNumber(student.getPhoneNumber());
+        basic.setStudentId(student.getStudentId());
         vo.setBasicInfo(basic);
 
         // Education List (修改点)
@@ -109,11 +110,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         // Expected Job
         StudentProfileVO.ExpectedJob jobVo = new StudentProfileVO.ExpectedJob();
         jobVo.setExpectedPosition(student.getExpectedPosition());
-        if (student.getExpectedMinSalary() != null) {
-            String salary = student.getExpectedMinSalary() +
-                    (student.getExpectedMaxSalary() != null ? "-" + student.getExpectedMaxSalary() : "以上");
-            jobVo.setExpectedSalary(salary);
-        }
+        jobVo.setExpectedMinSalary(student.getExpectedMinSalary());
+        jobVo.setExpectedMaxSalary(student.getExpectedMaxSalary());
         vo.setExpectedJob(jobVo);
 
         // Tags
@@ -137,6 +135,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         var basic = dto.getBasicInfo();
         student.setFullName(basic.getFullName());
         student.setPhoneNumber(basic.getPhoneNumber());
+        student.setStudentId(basic.getStudentId());
+
         student.setGender("男".equals(basic.getGender()) ? 0 : 1);
         try {
             if (basic.getDateOfBirth() != null && !basic.getDateOfBirth().isEmpty()) {
@@ -147,9 +147,12 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         }
         student.setJobSeekingStatus(mapStringToJobStatus(basic.getJobSeekingStatus()));
 
+        // Expected Job - [修改点：直接赋值 min/max 字段]
         var job = dto.getExpectedJob();
         student.setExpectedPosition(job.getExpectedPosition());
-        parseAndSetSalary(student, job.getExpectedSalary());
+        student.setExpectedMinSalary(job.getExpectedMinSalary());
+        student.setExpectedMaxSalary(job.getExpectedMaxSalary());
+
 
         if (studentMapper.findByUserId(userId).isPresent()) {
             studentMapper.update(student);

@@ -16,6 +16,8 @@ public class StudentWelcomeCardVO {
     private String lastLoginAt; // ISO 8601 格式字符串
     private List<PersonalTag> personalTags;
 
+    private String studentId;
+
     @Data
     public static class PersonalTag {
         private Integer tagId;
