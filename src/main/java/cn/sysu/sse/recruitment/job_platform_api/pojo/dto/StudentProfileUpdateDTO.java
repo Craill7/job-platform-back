@@ -17,10 +17,10 @@ public class StudentProfileUpdateDTO {
     @JsonProperty("basic_info")
     private BasicInfoDTO basicInfo;
 
+    // 修改：改为教育经历列表
     @Valid
-    @NotNull
     @JsonProperty("primary_education")
-    private PrimaryEducationDTO primaryEducation;
+    private List<EducationDTO> educationExperiences;
 
     @Valid
     @NotNull
@@ -41,7 +41,8 @@ public class StudentProfileUpdateDTO {
     }
 
     @Data
-    public static class PrimaryEducationDTO {
+    public static class EducationDTO {
+        private Long id; // 新增：如果有ID则是更新，无ID则是新增
         private String schoolName;
         private String degreeLevel;
         private String major;

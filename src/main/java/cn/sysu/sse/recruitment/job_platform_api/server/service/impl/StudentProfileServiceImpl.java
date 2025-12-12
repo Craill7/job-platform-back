@@ -32,9 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -94,17 +92,19 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         basic.setPhoneNumber(student.getPhoneNumber());
         vo.setBasicInfo(basic);
 
-        // Primary Education
-        StudentProfileVO.PrimaryEducation eduVo = new StudentProfileVO.PrimaryEducation();
-        if (primaryEdu != null) {
-            eduVo.setSchoolName(primaryEdu.getSchoolName());
-            eduVo.setDegreeLevel(mapDegreeToString(primaryEdu.getDegreeLevel()));
-            eduVo.setMajor(primaryEdu.getMajor());
-            eduVo.setMajorRank(primaryEdu.getMajorRank());
-            eduVo.setStartDate(primaryEdu.getStartDate() != null ? primaryEdu.getStartDate().format(MONTH_FMT) : "");
-            eduVo.setEndDate(primaryEdu.getEndDate() != null ? primaryEdu.getEndDate().format(MONTH_FMT) : "");
-        }
-        vo.setPrimaryEducation(eduVo);
+        // Education List (修改点)
+        List<StudentProfileVO.Education> eduVos = eduList.stream().map(edu -> {
+            StudentProfileVO.Education eduVo = new StudentProfileVO.Education();
+            eduVo.setId(edu.getId());
+            eduVo.setSchoolName(edu.getSchoolName());
+            eduVo.setDegreeLevel(mapDegreeToString(edu.getDegreeLevel()));
+            eduVo.setMajor(edu.getMajor());
+            eduVo.setMajorRank(edu.getMajorRank());
+            eduVo.setStartDate(edu.getStartDate() != null ? edu.getStartDate().format(MONTH_FMT) : "");
+            eduVo.setEndDate(edu.getEndDate() != null ? edu.getEndDate().format(MONTH_FMT) : "");
+            return eduVo;
+        }).collect(Collectors.toList());
+        vo.setEducationExperiences(eduVos);
 
         // Expected Job
         StudentProfileVO.ExpectedJob jobVo = new StudentProfileVO.ExpectedJob();
@@ -164,39 +164,55 @@ public class StudentProfileServiceImpl implements StudentProfileService {
             userMapper.update(user);
         }
 
-        // 3. 更新 Education (主要学历)
-        var eduDto = dto.getPrimaryEducation();
-        List<EducationExperience> eduList = educationExperienceMapper.findByStudentUserId(userId);
-        EducationExperience edu;
-        if (eduList.isEmpty()) {
-            edu = new EducationExperience();
-            edu.setStudentUserId(userId);
-        } else {
-            edu = eduList.get(0); // 更新第一条作为主学历
-        }
-        edu.setSchoolName(eduDto.getSchoolName());
-        edu.setMajor(eduDto.getMajor());
-        edu.setMajorRank(eduDto.getMajorRank());
-        edu.setDegreeLevel(mapStringToDegree(eduDto.getDegreeLevel()));
+        // 3. 更新 Education (列表处理逻辑)
+        List<StudentProfileUpdateDTO.EducationDTO> eduDtos = dto.getEducationExperiences();
+        if (eduDtos != null) {
+            // 获取数据库中现有的教育经历
+            List<EducationExperience> existingEdus = educationExperienceMapper.findByStudentUserId(userId);
+            Set<Long> existingIds = existingEdus.stream().map(EducationExperience::getId).collect(Collectors.toSet());
+            Set<Long> incomingIds = eduDtos.stream()
+                    .map(StudentProfileUpdateDTO.EducationDTO::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
 
-        // 处理日期 (支持 yyyy-MM 格式)
-        try {
-            if (eduDto.getStartDate() != null && !eduDto.getStartDate().isEmpty()) {
-                edu.setStartDate(LocalDate.parse(eduDto.getStartDate() + "-01", DATE_FMT));
+            // 3.1 删除不在新列表中的旧记录
+            for (Long id : existingIds) {
+                if (!incomingIds.contains(id)) {
+                    educationExperienceMapper.deleteById(id);
+                }
             }
-            if (eduDto.getEndDate() != null && !eduDto.getEndDate().isEmpty()) {
-                edu.setEndDate(LocalDate.parse(eduDto.getEndDate() + "-01", DATE_FMT));
+
+            // 3.2 插入或更新
+            for (StudentProfileUpdateDTO.EducationDTO eduDto : eduDtos) {
+                EducationExperience edu = new EducationExperience();
+                edu.setStudentUserId(userId);
+                edu.setSchoolName(eduDto.getSchoolName());
+                edu.setMajor(eduDto.getMajor());
+                edu.setMajorRank(eduDto.getMajorRank());
+                edu.setDegreeLevel(mapStringToDegree(eduDto.getDegreeLevel()));
+
+                // 处理日期
+                try {
+                    if (eduDto.getStartDate() != null && !eduDto.getStartDate().isEmpty()) {
+                        edu.setStartDate(LocalDate.parse(eduDto.getStartDate() , DATE_FMT));
+                    }
+                    if (eduDto.getEndDate() != null && !eduDto.getEndDate().isEmpty()) {
+                        edu.setEndDate(LocalDate.parse(eduDto.getEndDate() , DATE_FMT));
+                    }
+                } catch (Exception e) {
+                    logger.warn("教育经历日期解析失败", e);
+                }
+
+                if (eduDto.getId() != null && existingIds.contains(eduDto.getId())) {
+                    // 更新
+                    edu.setId(eduDto.getId());
+                    educationExperienceMapper.update(edu);
+                } else {
+                    // 新增
+                    educationExperienceMapper.insert(edu);
+                }
             }
-        } catch (Exception e) {
-            logger.warn("教育经历日期解析失败", e);
         }
-
-        if (edu.getId() == null) {
-            educationExperienceMapper.insert(edu);
-        } else {
-            educationExperienceMapper.update(edu);
-        }
-
         // 4. 更新 Tags
         if (dto.getPersonalTagIds() != null) {
             tagMapper.deleteStudentTagsByUserId(userId);

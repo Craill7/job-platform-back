@@ -1,5 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.pojo.vo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.util.List;
 
@@ -10,7 +11,10 @@ import java.util.List;
 public class StudentProfileVO {
     private String avatarUrl;
     private BasicInfo basicInfo;
-    private PrimaryEducation primaryEducation;
+
+    @JsonProperty("primary_education")
+    private List<Education> educationExperiences;
+
     private ExpectedJob expectedJob;
     private List<PersonalTag> personalTags;
 
@@ -25,7 +29,8 @@ public class StudentProfileVO {
     }
 
     @Data
-    public static class PrimaryEducation {
+    public static class Education {
+        private Long id; // 新增：教育经历ID，用于更新区分
         private String schoolName;
         private String degreeLevel; // "本科"/"硕士"...
         private String major;

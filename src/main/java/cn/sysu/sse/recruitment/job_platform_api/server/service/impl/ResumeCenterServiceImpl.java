@@ -104,12 +104,12 @@ public class ResumeCenterServiceImpl implements ResumeCenterService {
 		profile.setPhoneNumber(student.getPhoneNumber());
 		profile.setAvatarUrl(student.getAvatarUrl());
 		vo.setProfile(profile);
-		
-		// 获取教育经历（主档案，通常只有一条）
+
+		// Education List (修改点)
 		List<EducationExperience> educations = educationExperienceMapper.findByStudentUserId(studentUserId);
-		if (!educations.isEmpty()) {
-			EducationExperience edu = educations.get(0);
+		List<ResumeDraftVO.EducationVO> eduVos = educations.stream().map(edu -> {
 			ResumeDraftVO.EducationVO education = new ResumeDraftVO.EducationVO();
+			education.setId(edu.getId());
 			if (edu.getDegreeLevel() != null) {
 				String[] degrees = {"bachelor", "master", "doctor"};
 				if (edu.getDegreeLevel() >= 0 && edu.getDegreeLevel() < degrees.length) {
@@ -125,8 +125,9 @@ public class ResumeCenterServiceImpl implements ResumeCenterService {
 			if (edu.getEndDate() != null) {
 				education.setEndDate(edu.getEndDate().format(DATE_FORMATTER));
 			}
-			vo.setEducation(education);
-		}
+			return education;
+		}).collect(Collectors.toList());
+		vo.setEducations(eduVos);
 		
 		// 技能摘要
 		vo.setSkillsSummary(student.getSkillsSummary());

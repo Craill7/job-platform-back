@@ -1,12 +1,14 @@
 package cn.sysu.sse.recruitment.job_platform_api.pojo.vo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import java.util.List;
 
 @Data
 public class ResumeDraftVO {
 	private ProfileVO profile;
-	private EducationVO education;
+	@JsonProperty("education")
+	private List<EducationVO> educations;
 	private String skillsSummary;
 	private List<WorkExperienceVO> workExperiences;
 	private List<ProjectExperienceVO> projects;
@@ -23,9 +25,10 @@ public class ResumeDraftVO {
 		private String phoneNumber;
 		private String avatarUrl;
 	}
-	
+
 	@Data
 	public static class EducationVO {
+		private Long id; // 新增 ID
 		private String degree; // bachelor/master/doctor
 		private String schoolName;
 		private String major;
