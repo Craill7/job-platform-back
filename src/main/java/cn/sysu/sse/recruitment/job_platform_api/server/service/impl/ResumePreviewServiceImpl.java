@@ -69,6 +69,7 @@ public class ResumePreviewServiceImpl implements ResumePreviewService {
         } else {
             basicInfo.setDegreeLevel("未填写");
         }
+        basicInfo.setJobSeekingStatus(mapJobStatusToString(student.getJobSeekingStatus()));
         vo.setBasicInfo(basicInfo);
 
         // 4.2 组装 PrimaryEducation
@@ -88,8 +89,9 @@ public class ResumePreviewServiceImpl implements ResumePreviewService {
         // 4.3 组装 ExpectedJob
         ResumePreviewVO.ExpectedJob jobVo = new ResumePreviewVO.ExpectedJob();
         jobVo.setExpectedPosition(student.getExpectedPosition());
-        // 拼接期望薪资字符串
-        jobVo.setExpectedSalary(formatSalary(student.getExpectedMinSalary(), student.getExpectedMaxSalary()));
+        // 直接赋值 min 和 max，不再拼接字符串
+        jobVo.setExpectedMinSalary(student.getExpectedMinSalary());
+        jobVo.setExpectedMaxSalary(student.getExpectedMaxSalary());
         vo.setExpectedJob(jobVo);
 
         // 4.4 组装 PersonalTags
@@ -120,5 +122,16 @@ public class ResumePreviewServiceImpl implements ResumePreviewService {
         if (min == null) return "面议";
         if (max == null) return min + "及以上"; // 假设单位是元，如果是k需要乘1000，根据数据库实际存储调整
         return min + "-" + max;
+    }
+    // [新增] 辅助方法：转换求职状态
+    private String mapJobStatusToString(Integer status) {
+        if (status == null) return "未填写";
+        return switch (status) {
+            case 0 -> "在校-暂不考虑";
+            case 1 -> "在校-寻求实习";
+            case 2 -> "应届-寻求实习";
+            case 3 -> "应届-寻求校招";
+            default -> "未知状态";
+        };
     }
 }

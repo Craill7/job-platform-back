@@ -333,23 +333,26 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
     // --- 辅助转换方法 ---
 
+    // [修改点] 将数据库 INT 转换为 指定中文文本
     private String mapJobStatusToString(Integer status) {
         if (status == null) return "";
         return switch (status) {
-            case 0 -> "暂不考虑";
-            case 1 -> "寻求实习";
-            case 2 -> "寻求校招";
-            case 3 -> "积极求职";
+            case 0 -> "在校-暂不考虑";
+            case 1 -> "在校-寻求实习";
+            case 2 -> "应届-寻求实习";
+            case 3 -> "应届-寻求校招";
             default -> "";
         };
     }
 
+    // [修改点] 将前端传来的中文文本 转换为 数据库 INT
     private Integer mapStringToJobStatus(String status) {
-        if (status == null) return 1;
-        if (status.contains("不")) return 0;
-        if (status.contains("实习")) return 1;
-        if (status.contains("校招") || status.contains("全职") || status.contains("应届")) return 2;
-        return 1; // 默认寻求实习
+        if (status == null) return 0;
+        if (status.contains("暂不考虑")) return 0;
+        if (status.contains("在校") && status.contains("实习")) return 1;
+        if (status.contains("应届") && status.contains("实习")) return 2;
+        if (status.contains("校招") || (status.contains("应届") && !status.contains("实习"))) return 3;
+        return 0; // 默认值
     }
 
     private String mapDegreeToString(Integer degree) {

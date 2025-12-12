@@ -40,6 +40,7 @@ public class ResumePreviewVO {
         private String gender; // "男"/"女"
         private Integer age;   // 根据生日计算
         private String degreeLevel;
+        private String jobSeekingStatus;
     }
 
     @Data
@@ -55,7 +56,8 @@ public class ResumePreviewVO {
     @Data
     public static class ExpectedJob {
         private String expectedPosition;
-        private String expectedSalary; // 例如 "15000及以上"
+        private Integer expectedMinSalary;
+        private Integer expectedMaxSalary;
     }
 
     @Data
