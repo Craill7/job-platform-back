@@ -1,5 +1,6 @@
 package cn.sysu.sse.recruitment.job_platform_api.pojo.vo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -20,7 +21,8 @@ public class ResumePreviewVO {
     /**
      * 主要教育经历模块
      */
-    private PrimaryEducation primaryEducation;
+    @JsonProperty("primary_education")
+    private List<EducationBlock> educationExperiences;
 
     /**
      * 期望职位模块
@@ -44,12 +46,13 @@ public class ResumePreviewVO {
     }
 
     @Data
-    public static class PrimaryEducation {
+    public static class EducationBlock {
+        private Long id;
         private String schoolName;
         private String degreeLevel; // "本科"/"硕士"
         private String major;
-        private String startDate;// YYYY-MM-DD
-        private String endDate;  // YYYY-MM-DD
+        private String startDate;   // YYYY-MM
+        private String endDate;     // YYYY-MM
         private String majorRank;
     }
 

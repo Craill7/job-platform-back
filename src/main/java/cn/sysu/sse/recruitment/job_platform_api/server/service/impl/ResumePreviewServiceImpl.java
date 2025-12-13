@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,18 +75,25 @@ public class ResumePreviewServiceImpl implements ResumePreviewService {
         vo.setBasicInfo(basicInfo);
 
         // 4.2 组装 PrimaryEducation
-        if (primaryEdu != null) {
-            ResumePreviewVO.PrimaryEducation eduVo = new ResumePreviewVO.PrimaryEducation();
-            eduVo.setSchoolName(primaryEdu.getSchoolName());
-            eduVo.setMajor(primaryEdu.getMajor());
-            eduVo.setMajorRank(primaryEdu.getMajorRank());
-            eduVo.setDegreeLevel(convertDegree(primaryEdu.getDegreeLevel()));
-            // 格式化日期为 YYYY-MM-DD
-            eduVo.setStartDate(primaryEdu.getStartDate() != null ? primaryEdu.getStartDate().format(MONTH_FMT) : "");
-            eduVo.setEndDate(primaryEdu.getEndDate() != null ? primaryEdu.getEndDate().format(MONTH_FMT) : "");
+        List<ResumePreviewVO.EducationBlock> eduVos = new ArrayList<>();
+        if (eduList != null && !eduList.isEmpty()) {
+            eduVos = eduList.stream()
+                    // 核心修改：添加排序逻辑
+                    // 方式一：按学历等级升序 (0本科 -> 1硕士 -> 2博士)
+                    .sorted(Comparator.comparing(EducationExperience::getDegreeLevel))
 
-            vo.setPrimaryEducation(eduVo);
+                    .map(edu -> {
+                        ResumePreviewVO.EducationBlock block = new ResumePreviewVO.EducationBlock();
+                        block.setSchoolName(edu.getSchoolName());
+                        block.setMajor(edu.getMajor());
+                        block.setMajorRank(edu.getMajorRank());
+                        block.setDegreeLevel(convertDegree(edu.getDegreeLevel()));
+                        block.setStartDate(edu.getStartDate() != null ? edu.getStartDate().format(MONTH_FMT) : "");
+                        block.setEndDate(edu.getEndDate() != null ? edu.getEndDate().format(MONTH_FMT) : "");
+                        return block;
+                    }).collect(Collectors.toList());
         }
+        vo.setEducationExperiences(eduVos);
 
         // 4.3 组装 ExpectedJob
         ResumePreviewVO.ExpectedJob jobVo = new ResumePreviewVO.ExpectedJob();

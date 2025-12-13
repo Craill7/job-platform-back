@@ -94,17 +94,25 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         vo.setBasicInfo(basic);
 
         // Education List (修改点)
-        List<StudentProfileVO.Education> eduVos = eduList.stream().map(edu -> {
-            StudentProfileVO.Education eduVo = new StudentProfileVO.Education();
-            eduVo.setId(edu.getId());
-            eduVo.setSchoolName(edu.getSchoolName());
-            eduVo.setDegreeLevel(mapDegreeToString(edu.getDegreeLevel()));
-            eduVo.setMajor(edu.getMajor());
-            eduVo.setMajorRank(edu.getMajorRank());
-            eduVo.setStartDate(edu.getStartDate() != null ? edu.getStartDate().format(MONTH_FMT) : "");
-            eduVo.setEndDate(edu.getEndDate() != null ? edu.getEndDate().format(MONTH_FMT) : "");
-            return eduVo;
-        }).collect(Collectors.toList());
+        List<StudentProfileVO.Education> eduVos = eduList.stream()
+                // [新增] 排序逻辑：按学历等级升序 (0本科 -> 1硕士 -> 2博士)
+                // 使用 lambda 表达式处理可能的 null 值，将其视为 0 (本科)
+                .sorted(Comparator.comparing(edu -> edu.getDegreeLevel() == null ? 0 : edu.getDegreeLevel()))
+
+                // 原有的映射逻辑保持不变
+                .map(edu -> {
+                    StudentProfileVO.Education eduVo = new StudentProfileVO.Education();
+                    eduVo.setId(edu.getId());
+                    eduVo.setSchoolName(edu.getSchoolName());
+                    eduVo.setDegreeLevel(mapDegreeToString(edu.getDegreeLevel()));
+                    eduVo.setMajor(edu.getMajor());
+                    eduVo.setMajorRank(edu.getMajorRank());
+                    eduVo.setStartDate(edu.getStartDate() != null ? edu.getStartDate().format(MONTH_FMT) : "");
+                    eduVo.setEndDate(edu.getEndDate() != null ? edu.getEndDate().format(MONTH_FMT) : "");
+                    return eduVo;
+                })
+                .collect(Collectors.toList());
+
         vo.setEducationExperiences(eduVos);
 
         // Expected Job

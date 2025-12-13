@@ -18,6 +18,7 @@ public class StudentResumePreviewVO {
 
     @Data
     public static class PrimaryEducation {
+        private Long id;
         private String schoolName;
         private String degreeLevel;
         private String major;

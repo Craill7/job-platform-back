@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -107,26 +108,31 @@ public class ResumeCenterServiceImpl implements ResumeCenterService {
 
 		// Education List (修改点)
 		List<EducationExperience> educations = educationExperienceMapper.findByStudentUserId(studentUserId);
-		List<ResumeDraftVO.EducationVO> eduVos = educations.stream().map(edu -> {
-			ResumeDraftVO.EducationVO education = new ResumeDraftVO.EducationVO();
-			education.setId(edu.getId());
-			if (edu.getDegreeLevel() != null) {
-				String[] degrees = {"bachelor", "master", "doctor"};
-				if (edu.getDegreeLevel() >= 0 && edu.getDegreeLevel() < degrees.length) {
-					education.setDegree(degrees[edu.getDegreeLevel()]);
-				}
-			}
-			education.setSchoolName(edu.getSchoolName());
-			education.setMajor(edu.getMajor());
-			education.setMajorRank(edu.getMajorRank());
-			if (edu.getStartDate() != null) {
-				education.setStartDate(edu.getStartDate().format(DATE_FORMATTER));
-			}
-			if (edu.getEndDate() != null) {
-				education.setEndDate(edu.getEndDate().format(DATE_FORMATTER));
-			}
-			return education;
-		}).collect(Collectors.toList());
+		List<ResumeDraftVO.EducationVO> eduVos = educations.stream()
+				// [新增] 按照 degreeLevel 升序排序 (0本科 -> 1硕士 -> 2博士)
+				// 如果担心 degreeLevel 可能为 null，可以使用: Comparator.comparing(EducationExperience::getDegreeLevel, Comparator.nullsLast(Comparator.naturalOrder()))
+				.sorted(Comparator.comparing(EducationExperience::getDegreeLevel))
+				.map(edu -> {
+					ResumeDraftVO.EducationVO education = new ResumeDraftVO.EducationVO();
+					education.setId(edu.getId());
+					if (edu.getDegreeLevel() != null) {
+						String[] degrees = {"bachelor", "master", "doctor"};
+						if (edu.getDegreeLevel() >= 0 && edu.getDegreeLevel() < degrees.length) {
+							education.setDegree(degrees[edu.getDegreeLevel()]);
+						}
+					}
+					education.setSchoolName(edu.getSchoolName());
+					education.setMajor(edu.getMajor());
+					education.setMajorRank(edu.getMajorRank());
+					if (edu.getStartDate() != null) {
+						education.setStartDate(edu.getStartDate().format(DATE_FORMATTER));
+					}
+					if (edu.getEndDate() != null) {
+						education.setEndDate(edu.getEndDate().format(DATE_FORMATTER));
+					}
+					return education;
+				}).collect(Collectors.toList());
+
 		vo.setEducations(eduVos);
 		
 		// 技能摘要
