@@ -49,7 +49,9 @@ public class StudentProfileUpdateDTO {
         private String schoolName;
         private String degreeLevel;
         private String major;
+        @JsonProperty("start_date")
         private String startDate;
+        @JsonProperty("end_date")
         private String endDate;
         private String majorRank;
     }
