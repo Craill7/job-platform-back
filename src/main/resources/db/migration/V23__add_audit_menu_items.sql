@@ -1,92 +1,14 @@
 -- Flyway migration script V23
--- Add audit menu items for company and job review
+-- Update audit menu items component field
 
--- Insert company account audit menu item
-INSERT INTO `sys_menu` (
-    `menu_id`,
-    `menu_name`,
-    `parent_id`,
-    `order_num`,
-    `path`,
-    `component`,
-    `query`,
-    `route_name`,
-    `is_frame`,
-    `is_cache`,
-    `menu_type`,
-    `visible`,
-    `status`,
-    `perms`,
-    `icon`,
-    `create_by`,
-    `create_time`,
-    `update_by`,
-    `update_time`,
-    `remark`
-) VALUES (
-             2076,
-             '企业账号审核',
-             2009,
-             1,
-             'account-review',
-             'recruit/audit/companyAudit',
-             NULL,
-             '',
-             1,
-             0,
-             'C',
-             '0',
-             '0',
-             '',
-             '#',
-             'admin',
-             NOW(),
-             'admin',
-             NOW(),
-             ''
-         );
+UPDATE `sys_menu`
+SET `component` = 'recruit/audit/companyAudit',
+    `update_by` = 'admin',
+    `update_time` = NOW()
+WHERE `menu_id` = 2076;
 
--- Insert job posting audit menu item
-INSERT INTO `sys_menu` (
-    `menu_id`,
-    `menu_name`,
-    `parent_id`,
-    `order_num`,
-    `path`,
-    `component`,
-    `query`,
-    `route_name`,
-    `is_frame`,
-    `is_cache`,
-    `menu_type`,
-    `visible`,
-    `status`,
-    `perms`,
-    `icon`,
-    `create_by`,
-    `create_time`,
-    `update_by`,
-    `update_time`,
-    `remark`
-) VALUES (
-             2077,
-             '岗位发布审核',
-             2009,
-             1,
-             'job-review',
-             'recruit/audit/jobAudit',
-             NULL,
-             '',
-             1,
-             0,
-             'C',
-             '0',
-             '0',
-             '',
-             '#',
-             'admin',
-             NOW(),
-             'admin',
-             NOW(),
-             ''
-         );
+UPDATE `sys_menu`
+SET `component` = 'recruit/audit/jobAudit',
+    `update_by` = 'admin',
+    `update_time` = NOW()
+WHERE `menu_id` = 2077;
