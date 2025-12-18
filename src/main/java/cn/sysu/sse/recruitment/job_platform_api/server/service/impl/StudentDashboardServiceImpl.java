@@ -8,9 +8,12 @@ import cn.sysu.sse.recruitment.job_platform_api.pojo.entity.*;
 import cn.sysu.sse.recruitment.job_platform_api.pojo.vo.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.mapper.*;
 import cn.sysu.sse.recruitment.job_platform_api.server.service.StudentDashboardService;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -28,6 +31,10 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 
 	private static final Logger logger = LoggerFactory.getLogger(StudentDashboardServiceImpl.class);
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+	@Value("${file.server-prefix}")
+	private String serverPrefix;
+
 	@Autowired
 	private StudentMapper studentMapper;
 
@@ -346,15 +353,22 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "活动不存在"));
 
 		EventDetailVO vo = new EventDetailVO();
-		vo.setEventId(event.getId());
-		vo.setEventTitle(event.getEventTitle());
-		vo.setEventSummary(event.getEventSummary());
-		vo.setEventLocation(event.getEventLocation());
-		vo.setEventType(event.getEventType());
 
-		// [修改] 直接赋值，无需 switch-case 转换
+		// 1. 先批量拷贝同名属性
+		BeanUtils.copyProperties(event, vo);
+
+		// 2. 特殊处理 ID（如果 VO 字段名和 Entity 不一致，比如 eventId vs id）
+		vo.setEventId(event.getId());
+
+		// 3. 核心：处理富文本图片路径
+		if (StringUtils.isNotEmpty(event.getEventSummary())) {
+			vo.setEventSummary(processHtmlImageUrls(event.getEventSummary()));
+		}
+
+		// 4. 处理枚举或特定字段
 		vo.setEventTargetAudience(event.getTargetAudience());
 
+		// 5. 格式化时间
 		if (event.getEventStartTime() != null) {
 			vo.setEventStartTime(event.getEventStartTime().format(TIME_FORMATTER));
 		}
@@ -363,6 +377,25 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 		}
 
 		return vo;
+	}
+
+	/**
+	 * 处理富文本中的图片路径
+	 */
+	private String processHtmlImageUrls(String content) {
+		if (StringUtils.isEmpty(content) || StringUtils.isEmpty(serverPrefix)) {
+			return content;
+		}
+
+		// 1. 先把可能存在的 /dev-api 前缀去掉（如果有的话）
+		// 这样 src="/dev-api/profile/..." 变成 src="/profile/..."
+		String cleanContent = content.replace("src=\"/dev-api/", "src=\"/");
+
+		// 2. 补全完整的服务器前缀
+		// 确保 serverPrefix = http://localhost:8081
+		// 结果：src="http://localhost:8081/profile/..."
+		return cleanContent.replace("src=\"/profile/", "src=\"" + serverPrefix + "/profile/")
+				.replace("src='/profile/", "src='" + serverPrefix + "/profile/");
 	}
 
 	@Override
