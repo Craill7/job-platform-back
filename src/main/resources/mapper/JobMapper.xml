@@ -177,11 +177,18 @@
 					OR c.company_address LIKE CONCAT('%', #{criteria.city}, '%')
 				)
 			</if>
-			<if test="criteria.minSalary != null">
-				AND (j.max_salary IS NULL OR j.max_salary >= #{criteria.minSalary})
+			<!-- 薪资范围筛选：岗位薪资范围与查询范围有交集 -->
+			<if test="criteria.minSalary != null and criteria.maxSalary != null">
+				AND (
+				(j.min_salary IS NOT NULL AND j.max_salary IS NOT NULL AND j.max_salary >= #{criteria.minSalary} AND j.min_salary &lt;= #{criteria.maxSalary})
+				OR (j.min_salary IS NOT NULL AND j.max_salary IS NULL AND j.min_salary &lt;= #{criteria.maxSalary})
+				)
 			</if>
-			<if test="criteria.maxSalary != null">
-				AND (j.min_salary IS NULL OR j.min_salary &lt;= #{criteria.maxSalary})
+			<if test="criteria.minSalary != null and criteria.maxSalary == null">
+				AND j.max_salary IS NOT NULL AND j.max_salary >= #{criteria.minSalary}
+			</if>
+			<if test="criteria.maxSalary != null and criteria.minSalary == null">
+				AND j.min_salary IS NOT NULL AND j.min_salary &lt;= #{criteria.maxSalary}
 			</if>
 			<if test="criteria.type != null and criteria.type != ''">
 				AND j.type = #{criteria.type}
