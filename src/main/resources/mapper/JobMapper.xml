@@ -143,6 +143,7 @@
 		LEFT JOIN companies c ON j.company_id = c.company_id
 		LEFT JOIN job_tags jt ON j.id = jt.job_id
 		WHERE j.status = 20
+			AND j.deadline >= NOW()
 		<if test="criteria != null">
 			<if test="criteria.keyword != null and criteria.keyword != ''">
 				AND (j.title LIKE CONCAT('%', #{criteria.keyword}, '%')
